@@ -3,11 +3,16 @@
 #include <stddef.h>
 #include <ctype.h>
 #include "include/compiler.h"
+#include "include/utils.h"
 
 char NEXT() {
 	char ch;
-	if((ch = fgetc(SOURCE)) != EOF)
+	if((ch = fgetc(SOURCE)) != EOF) {
+		if (ch == '\n') {
+			LINE++;
+		}
 		return ch;
+	}
 	return EOF;
 }
 
@@ -39,6 +44,9 @@ Token lex_next_token() {
 			ch = NEXT();
 		}		
 		tag = VARIABLE_T;
+	} else {
+		print_error("Invalid token");
+		exit(1);
 	}
 	str[str_counter] = '\0';
 	

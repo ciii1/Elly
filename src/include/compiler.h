@@ -1,5 +1,8 @@
 #include "types.h"
 #include "defs.h"
 
-extern Token t_init_token(char *value, int tag);
 extern FILE *SOURCE;
+extern char *FILENAME;
+extern int LINE;
+
+extern int compile(char *filename);
