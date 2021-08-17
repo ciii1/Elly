@@ -62,6 +62,16 @@ Token lex_next_token() {
 		} else {
 			tag = INT_T;
 		}
+	} else if (ch == '\'' || ch == '\"') {
+		char str_symbol = ch; /* symbol that were used to make the string */
+		ch = NEXT();
+		while (ch != str_symbol && ch != EOF) {
+			str[str_counter] = ch;
+			str_counter++;
+			ch = NEXT();
+		}
+		ch = NEXT();
+		tag = STRING_T;
 	} else { /*else, error*/
 		print_error("Invalid token");
 		exit(1);
