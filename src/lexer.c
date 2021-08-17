@@ -17,6 +17,7 @@ char NEXT() {
 	char ch;
 	ch = fgetc(SOURCE);
 	COLUMN++;
+	CHAR++;
 	if (ch == '\n') {
 		LINE++;
 		COLUMN = 1;

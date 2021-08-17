@@ -5,6 +5,7 @@
 
 FILE *SOURCE;
 char *FILENAME;
+int CHAR = 1;
 int LINE = 1;
 int COLUMN = 1;
 

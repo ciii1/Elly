@@ -3,6 +3,7 @@
 
 extern FILE *SOURCE;
 extern char *FILENAME;
+extern int CHAR;
 extern int LINE;
 extern int COLUMN;
 
