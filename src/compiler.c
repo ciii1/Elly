@@ -6,6 +6,7 @@
 FILE *SOURCE;
 char *FILENAME;
 int LINE = 1;
+int COLUMN = 1;
 
 int compile(char *filename) {
 	if ((SOURCE = fopen(filename,"r")) != NULL) {

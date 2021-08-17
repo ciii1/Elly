@@ -2,5 +2,5 @@
 #include "include/compiler.h"
 
 void print_error(char *msg) {
-	printf("Error: %s, at file '%s', line %i\n", msg, FILENAME, LINE); 
+	printf("%s(%i, %i): \x1B[31merror\x1B[0m: %s\n", FILENAME, LINE, COLUMN, msg); 
 }

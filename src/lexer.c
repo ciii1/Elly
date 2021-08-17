@@ -16,8 +16,10 @@ char PEEK() {
 char NEXT() {
 	char ch;
 	ch = fgetc(SOURCE);
+	COLUMN++;
 	if (ch == '\n') {
 		LINE++;
+		COLUMN = 1;
 	}
 	return PEEK();
 }
@@ -26,7 +28,7 @@ Token lex_next_token() {
 	char str[32];
 	int str_counter = 0;
 
-	char ch = PEEK();
+	signed char ch = PEEK();
 	/* check if the current character is EOF */
 	if (ch == EOF) { 
 		return t_init_token(str, EOF_T);

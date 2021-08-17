@@ -4,5 +4,6 @@
 extern FILE *SOURCE;
 extern char *FILENAME;
 extern int LINE;
+extern int COLUMN;
 
 extern int compile(char *filename);
