@@ -1,2 +1,4 @@
-#define EOF_T 0
-#define VARIABLE_T 1
+#define EOF_T		0
+#define VARIABLE_T 	1
+#define INT_T 		2
+#define FLOAT_T 	3
