@@ -65,10 +65,14 @@ Token lex_next_token() {
 	} else if (ch == '\'' || ch == '\"') {
 		char str_symbol = ch; /* symbol that were used to make the string */
 		ch = NEXT();
-		while (ch != str_symbol && ch != EOF) {
+		while (ch != str_symbol) {
 			str[str_counter] = ch;
 			str_counter++;
 			ch = NEXT();
+			if(ch == '\n') {
+				print_error("Unexpected end of line while scanning string literal");
+				exit(1);
+			}
 		}
 		ch = NEXT();
 		tag = STRING_T;
