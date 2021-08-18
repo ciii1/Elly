@@ -26,18 +26,13 @@ char NEXT() {
 }
 
 Token lex_next_token() {
+	signed char ch = PEEK();
 	char str[32];
 	int str_counter = 0;
-
-	signed char ch = PEEK();
-	/* check if the current character is EOF */
-	if (ch == EOF) { 
-		return t_init_token(str, EOF_T);
-	}
-
-	/* do the actual lexing stuff here */
 	char tag;
-	if (isalpha(ch) || ch == '_' || ch == '-') { /* check if it's a variable */
+	if (ch == EOF) {
+		tag = EOF_T;
+	} else if (is_identifier(ch)) { /* check if it's an identifier */
 		while (isalnum(ch) || ch == '_' || ch == '-') {	
 			str[str_counter] = ch;
 			str_counter++;
@@ -62,7 +57,7 @@ Token lex_next_token() {
 		} else {
 			tag = INT_T;
 		}
-	} else if (ch == '\'' || ch == '\"') {
+	} else if (ch == '\'' || ch == '\"') { /* if it's a string */
 		char str_symbol = ch; /* symbol that were used to make the string */
 		ch = NEXT();
 		while (ch != str_symbol) {
@@ -76,12 +71,29 @@ Token lex_next_token() {
 		}
 		ch = NEXT();
 		tag = STRING_T;
+	} else if(is_operator(ch)) { /* if it's one of the operators */
+		str[str_counter] = ch;
+		str_counter++;
+
+		char head_operator = ch;
+		ch = NEXT();
+		if (is_operator(ch)) {
+			if (ch == '=' ||  /* allow = after all operator */
+					ch == '&' && head_operator == '&' || /* allow & after & (&&)*/
+					ch == '|' && head_operator == '|' ){ /* allow | after | (||)*/
+						str[str_counter] = ch;
+						str_counter++;
+						ch = NEXT();	
+			}
+		}
+		tag = OPERATOR_T;
 	} else { /*else, error*/
 		print_error("Invalid token");
 		exit(1);
-	} 
-	
-	str[str_counter] = '\0';	
+	}
+
+	/* add an escape character after the string */	
+	str[str_counter] = '\0';
 
 	/* skip whitespaces */
 	while (ch == ' ' || ch == '\t' || ch == '\n') {	

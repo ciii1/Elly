@@ -3,3 +3,4 @@
 #define INT_T 		2
 #define FLOAT_T 	3
 #define STRING_T	4
+#define OPERATOR_T 5
