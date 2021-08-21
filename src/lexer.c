@@ -6,6 +6,40 @@
 #include "include/compiler.h"
 #include "include/utils.h"
 
+/* the following function returns true if the argument 'ch' given is one of the first operator combination 
+ * (if the operator is += then + is the first operator combination) and returns false otherwise */
+bool is_operator(char ch) {
+	if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || 
+			ch == '=' || ch == '!' || ch == '>' || ch == '<' || 
+			ch == '&' || ch == '|' || ch == '^' || ch == '-') {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+/* the following function returns true if 'ch' is one of the allowed first characters of identifier */
+bool is_identifier(char ch) {
+	if (isalpha(ch) || ch == '_') {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+/* the following function returns true if 'ch' is one of valid elly symbols ('(' ')' '{' '}' '[' ']' ',') */
+bool is_symbol(char ch) {
+	if (ch == '(' || ch == ')' ||
+	    ch == '{' || ch == '}' ||
+	    ch == '[' || ch == ']' ||
+	    ch == ',') {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+/* get current character of the file without moving the fseek */
 char PEEK() {
 	char ch;
 	ch = fgetc(SOURCE);
@@ -13,6 +47,7 @@ char PEEK() {
 	return ch;
 }
 
+/* get next character of the file and move the fseek */
 char NEXT() {
 	char ch;
 	ch = fgetc(SOURCE);
@@ -25,13 +60,18 @@ char NEXT() {
 	return PEEK();
 }
 
+/* generate next token */
 Token lex_next_token() {
 	signed char ch = PEEK();
 	char str[32];
 	int str_counter = 0;
 	char tag;
+
 	if (ch == EOF) {
 		tag = EOF_T;
+	} else if (ch == '\n') {
+		ch = NEXT();
+		tag = EOL_T;
 	} else if (is_identifier(ch)) { /* check if it's an identifier */
 		while (isalnum(ch) || ch == '_' || ch == '-') {	
 			str[str_counter] = ch;
@@ -66,37 +106,49 @@ Token lex_next_token() {
 			ch = NEXT();
 			if(ch == '\n') {
 				print_error("Unexpected end of line while scanning string literal");
-				exit(1);
 			}
 		}
 		ch = NEXT();
 		tag = STRING_T;
-	} else if(is_operator(ch)) { /* if it's one of the operators */
+	} else if (is_operator(ch)) { /* if it's one of the operators */
 		str[str_counter] = ch;
 		str_counter++;
-
-		char head_operator = ch;
+		char head_operator = ch; /* to be checked with the trailing operator */
 		ch = NEXT();
 		if (is_operator(ch)) {
 			if (ch == '=' ||  /* allow = after all operator */
-					ch == '&' && head_operator == '&' || /* allow & after & (&&)*/
-					ch == '|' && head_operator == '|' ){ /* allow | after | (||)*/
-						str[str_counter] = ch;
-						str_counter++;
-						ch = NEXT();	
+			    ch == '&' && head_operator == '&' || /* allow & after & (&&)*/
+			    ch == '|' && head_operator == '|' ){  /* allow | after | (||)*/
+				str[str_counter] = ch;
+				str_counter++;
+				ch = NEXT();	
+			} else if (ch == '>' && head_operator == '>' || /* allow > after > (>>) */
+			           ch == '<' && head_operator == '<' ){ /* allow < after < (<<) */	
+				str[str_counter] = ch;
+				str_counter++;
+				ch = NEXT();
+				if (ch == '=') {
+					str[str_counter] = ch;
+					str_counter++;
+					ch = NEXT();
+				}
 			}
 		}
 		tag = OPERATOR_T;
+	} else if (is_symbol(ch)) { /* if it's one of the symbols */
+	 	str[str_counter] = ch;
+		ch = NEXT();
+  		str_counter++;
+		tag = SYMBOL_T;		
 	} else { /*else, error*/
 		print_error("Invalid token");
-		exit(1);
 	}
 
 	/* add an escape character after the string */	
 	str[str_counter] = '\0';
 
 	/* skip whitespaces */
-	while (ch == ' ' || ch == '\t' || ch == '\n') {	
+	while (ch == ' ' || ch == '\t') {
 		ch = NEXT();
 	}
 

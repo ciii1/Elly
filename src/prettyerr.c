@@ -1,5 +1,6 @@
 #define LINE_LENGTH 256
 #include <stdio.h>
+#include <stdlib.h>
 #include "include/compiler.h"
 
 void print_error(char *msg) {
@@ -9,23 +10,27 @@ void print_error(char *msg) {
 	char line_content[LINE_LENGTH];
 
 	fseek(SOURCE, CHAR - COLUMN, SEEK_SET); /* set the seek to the start of the line */
-
-	if (fgets(line_content, LINE_LENGTH, SOURCE) == NULL) {
+	
+	/* read characters till the character that contains the error */
+	if (fgets(line_content, COLUMN, SOURCE) == NULL) { 
 		return;
 	}
 
-	printf("\t%i | %s", LINE, line_content);
-
-	fseek(SOURCE, CHAR, SEEK_SET);  /*set the seek back to our previous position */
-
-	/* print a 'cursor' that points to the error */	
+	/*print space with the digit length of LINE */
 	printf("\t ");
 	int x = LINE;
-	while ( x /= 10 ) /*print space with the digit length of LINE */
+	while ( x /= 10 )
 		printf(" "); 
-	printf(" |");
-	for(int i = 0; i < COLUMN; i++) { /*print space until it reaches the column that has error*/
-		printf(" ");
-	}
-	printf("^\n\n");
+	printf(" |\n");
+
+	printf("\t%i | %s", LINE, line_content);
+
+	printf("\x1B[31m%c\x1B[0m", fgetc(SOURCE)); /*read the character that contains the error with red color */
+
+	fgets(line_content, COLUMN, SOURCE); /*read to the end of the line*/
+	printf("%s\n", line_content);
+	
+	fseek(SOURCE, CHAR, SEEK_SET);  /*set the seek back to our previous position+1*/
+	
+	exit(1);
 }
