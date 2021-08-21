@@ -6,3 +6,9 @@
 #define STRING_T	5
 #define OPERATOR_T 	6
 #define SYMBOL_T	7
+#define FOR_T		8
+#define WHILE_T		9
+#define FN_T		10
+#define RETURN_T	11
+#define IMPORT_T	12
+#define CIMPORT_T	13

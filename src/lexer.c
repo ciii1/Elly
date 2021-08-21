@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <string.h>
 #include "include/compiler.h"
 #include "include/utils.h"
 
@@ -39,6 +40,26 @@ bool is_symbol(char ch) {
 	}
 }
 
+/* the following function returns the tag of a keyword if the given char* argument is a keyword, else it returns VARIABLE_T */
+Tag get_keyword_tag(char *str) {
+	if (strcmp(str, "for") == 0) {
+		return FOR_T;
+	} else if (strcmp(str, "while") == 0) {
+		return WHILE_T;
+	} else if (strcmp(str, "fn") == 0) {
+		return FN_T;
+	} else if (strcmp(str, "return") == 0) {
+		return RETURN_T;
+	} else if (strcmp(str, "import") == 0) {
+		return IMPORT_T;	
+	} else if (strcmp(str, "cimport") == 0) {
+		return CIMPORT_T;
+	} else {
+		return VARIABLE_T;
+	}
+}
+
+
 /* get current character of the file without moving the fseek */
 char PEEK() {
 	char ch;
@@ -65,7 +86,7 @@ Token lex_next_token() {
 	signed char ch = PEEK();
 	char str[32];
 	int str_counter = 0;
-	char tag;
+	Tag tag;
 
 	if (ch == EOF) {
 		tag = EOF_T;
@@ -77,8 +98,9 @@ Token lex_next_token() {
 			str[str_counter] = ch;
 			str_counter++;
 			ch = NEXT();
-		}		
-		tag = VARIABLE_T;
+		}
+		str[str_counter] = '\0';	
+		tag = get_keyword_tag(str);
 	} else if (isdigit(ch)) { /*if it's a number*/
 		bool is_float = false;
 		while (isdigit(ch)) {	
