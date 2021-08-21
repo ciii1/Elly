@@ -100,7 +100,7 @@ Token lex_next_token() {
 			ch = NEXT();
 		}
 		str[str_counter] = '\0';	
-		tag = get_keyword_tag(str);
+		tag = get_keyword_tag(str); /* analyze if it's a keyword */
 	} else if (isdigit(ch)) { /*if it's a number*/
 		bool is_float = false;
 		while (isdigit(ch)) {	
