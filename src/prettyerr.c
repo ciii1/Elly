@@ -24,11 +24,16 @@ void print_error(char *msg) {
 	printf(" |\n");
 
 	printf("\t%i | %s", LINE, line_content);
-
-	printf("\x1B[31m%c\x1B[0m", fgetc(SOURCE)); /*read the character that contains the error with red color */
-
-	fgets(line_content, COLUMN, SOURCE); /*read to the end of the line*/
-	printf("%s\n", line_content);
+	
+	/*read the character that contains the error and print with red color */
+	char err_char = fgetc(SOURCE);
+	if (err_char == '\n') {
+		printf("\x1B[31m↵\x1B[0m\n\n");
+	} else {
+		printf("\x1B[31m%c\x1B[0m", err_char);
+		fgets(line_content, COLUMN, SOURCE); /*read to the end of the line*/
+		printf("%s\n", line_content);
+	}
 	
 	fseek(SOURCE, CHAR, SEEK_SET);  /*set the seek back to our previous position+1*/
 	
