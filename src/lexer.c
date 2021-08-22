@@ -200,6 +200,23 @@ Token lex_next_token() {
 	return t_init_token(str, tag);
 }	
 
-char lex_peek_token() {
-	return PEEK();
+/* generate next token but don't move the fseek */
+Token lex_peek_token() {
+	/* store all the compiler variables */
+	int curr_char = CHAR;
+	int curr_col = COLUMN;
+	int curr_line = LINE;
+
+	/* get next token */
+	Token token = lex_next_token();
+
+	/* fseek back */
+	fseek(SOURCE, curr_char, SEEK_SET);
+
+	/* restore the compiler variables */
+	CHAR = curr_char;
+	COLUMN = curr_col;
+	LINE = curr_line;
+
+	return token;
 }
