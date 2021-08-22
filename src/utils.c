@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stddef.h>
+#include "include/types.h"
+#include "include/defs.h"
 #include "include/compiler.h"
 
 /* the following function creates a new token from the given arguments */

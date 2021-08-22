@@ -4,6 +4,8 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <string.h>
+#include "include/types.h"
+#include "include/defs.h"
 #include "include/compiler.h"
 #include "include/utils.h"
 

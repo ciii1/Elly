@@ -1,6 +1,3 @@
-#include "types.h"
-#include "defs.h"
-
 extern FILE *SOURCE;
 extern char *FILENAME;
 extern int CHAR;

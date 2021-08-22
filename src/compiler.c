@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "include/lexer.h"
+#include "include/types.h"
+#include "include/defs.h"
+#include "include/parser.h"
 
 
 FILE *SOURCE;
@@ -19,11 +21,11 @@ int compile(char *filename) {
 		return 1;
 	}
 	
-	Token token = lex_next_token();	
+	Token token = parse_next_token();	
 	int i = 0;
 	while (token.tag != EOF_T) {
 		printf("Token%i\n  Value:%s\n  Tag:%i\n", i, token.value, token.tag);
-		token = lex_next_token();	
+		token = parse_next_token();	
 		i += 1;
 	}
 	fclose(SOURCE);
