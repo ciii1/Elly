@@ -62,6 +62,10 @@ Tag get_keyword_tag(char *str) {
 		return IMPORT_T;	
 	} else if (strcmp(str, "cimport") == 0) {
 		return CIMPORT_T;
+	} else if (strcmp(str, "break") == 0) {
+		return BREAK_T;
+	} else if (strcmp(str, "continue") == 0) {
+		return CONTINUE_T;
 	} else {
 		return VARIABLE_T;
 	}

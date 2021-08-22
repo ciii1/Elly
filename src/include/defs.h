@@ -15,3 +15,5 @@
 #define IF_T		14
 #define ELIF_T		15
 #define ELSE_T		16
+#define BEAK_T		17
+#define CONTINUE_T	18
