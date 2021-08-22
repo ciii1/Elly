@@ -11,5 +11,6 @@
 #include "include/utils.h"
 
 Token parse_next_token() {
+	
 	return lex_next_token();
 }
