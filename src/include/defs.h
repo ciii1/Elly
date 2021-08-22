@@ -12,3 +12,6 @@
 #define RETURN_T	11
 #define IMPORT_T	12
 #define CIMPORT_T	13
+#define IF_T		14
+#define ELIF_T		15
+#define ELSE_T		16

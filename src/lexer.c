@@ -46,6 +46,12 @@ Tag get_keyword_tag(char *str) {
 		return FOR_T;
 	} else if (strcmp(str, "while") == 0) {
 		return WHILE_T;
+	} else if (strcmp(str, "if") == 0) {
+		return IF_T;
+	} else if (strcmp(str, "else") == 0) {
+		return ELSE_T;
+	} else if (strcmp(str, "elif") == 0) {
+		return ELIF_T;
 	} else if (strcmp(str, "fn") == 0) {
 		return FN_T;
 	} else if (strcmp(str, "return") == 0) {
@@ -87,6 +93,17 @@ Token lex_next_token() {
 	char str[32];
 	int str_counter = 0;
 	Tag tag;
+
+	/* skip whitespaces and comments*/
+	if (ch == '#') {
+		while (ch != '\n') {
+			ch = NEXT();
+		}
+	} else if (ch == ' ' || ch == '\t') {
+		while (ch == ' ' || ch == '\t') {
+			ch = NEXT();
+		}
+	}
 
 	if (ch == EOF) {
 		tag = EOF_T;
@@ -169,9 +186,15 @@ Token lex_next_token() {
 	/* add an escape character after the string */	
 	str[str_counter] = '\0';
 
-	/* skip whitespaces */
-	while (ch == ' ' || ch == '\t') {
-		ch = NEXT();
+	/* skip whitespaces and comments*/
+	if (ch == '#') {
+		while (ch != '\n') {
+			ch = NEXT();
+		}
+	} else if (ch == ' ' || ch == '\t') {
+		while (ch == ' ' || ch == '\t') {
+			ch = NEXT();
+		}
 	}
 
 	return t_init_token(str, tag);
