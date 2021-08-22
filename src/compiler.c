@@ -3,7 +3,8 @@
 #include <stdbool.h>
 #include "include/types.h"
 #include "include/defs.h"
-#include "include/parser.h"
+#include "include/lexer.h"
+#include "include/generator.h"
 
 
 FILE *SOURCE;
@@ -20,14 +21,23 @@ int compile(char *filename) {
 		printf("can't open '%s'\n", filename);
 		return 1;
 	}
-	
-	Token token = parse_next_token();	
+
+	printf("Tokens: \n");	
+	Token token = lex_next_token();
 	int i = 0;
 	while (token.tag != EOF_T) {
 		printf("Token%i\n  Value:%s\n  Tag:%i\n", i, token.value, token.tag);
-		token = parse_next_token();	
+		token = lex_next_token();	
 		i += 1;
 	}
+
+	fseek(SOURCE, 0, SEEK_SET);
+
+	printf("Code: \n");
+	char* output = generate_code();
+	printf(output);
+	free(output);
+
 	fclose(SOURCE);
 
 	return 0;
