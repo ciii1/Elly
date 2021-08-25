@@ -4,8 +4,8 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <string.h>
-#include "include/types.h"
 #include "include/defs.h"
+#include "include/types.h"
 #include "include/compiler.h"
 #include "include/utils.h"
 
@@ -60,8 +60,6 @@ Tag get_keyword_tag(char *str) {
 		return RETURN_T;
 	} else if (strcmp(str, "import") == 0) {
 		return IMPORT_T;	
-	} else if (strcmp(str, "cimport") == 0) {
-		return CIMPORT_T;
 	} else if (strcmp(str, "break") == 0) {
 		return BREAK_T;
 	} else if (strcmp(str, "continue") == 0) {
@@ -217,7 +215,7 @@ Token lex_peek_token() {
 	Token token = lex_next_token();
 
 	/* fseek back */
-	fseek(SOURCE, curr_char, SEEK_SET);
+	fseek(SOURCE, curr_char-1, SEEK_SET);
 
 	/* restore the compiler variables */
 	CHAR = curr_char;

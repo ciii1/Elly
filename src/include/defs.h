@@ -11,9 +11,10 @@
 #define FN_T		10
 #define RETURN_T	11
 #define IMPORT_T	12
-#define CIMPORT_T	13
-#define IF_T		14
-#define ELIF_T		15
-#define ELSE_T		16
-#define BEAK_T		17
-#define CONTINUE_T	18
+#define IF_T		13
+#define ELIF_T		14
+#define ELSE_T		15
+#define BREAK_T		16
+#define CONTINUE_T	17
+
+#define MAX_TOKEN_VALUE 50
