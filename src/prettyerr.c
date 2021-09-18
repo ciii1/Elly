@@ -31,11 +31,11 @@ void print_error(char *msg) {
 		printf("\x1B[31m↵\x1B[0m\n\n");
 	} else {
 		printf("\x1B[31m%c\x1B[0m", err_char);
-		fgets(line_content, COLUMN, SOURCE); /*read to the end of the line*/
+		fgets(line_content, LINE_LENGTH, SOURCE); /*read to the end of the line*/
 		printf("%s\n", line_content);
 	}
 	
 	fseek(SOURCE, CHAR, SEEK_SET);  /*set the seek back to our previous position+1*/
 	
-	exit(1);
+	exit(1); /*TODO: don't exit when encounter an error */
 }

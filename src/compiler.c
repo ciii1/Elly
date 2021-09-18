@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "include/types.h"
 #include "include/defs.h"
+#include "include/types.h"
 #include "include/lexer.h"
 #include "include/generator.h"
 
@@ -22,20 +22,9 @@ int compile(char *filename) {
 		return 1;
 	}
 
-	printf("Tokens: \n");	
-	Token token = lex_next_token();
-	int i = 0;
-	while (token.tag != EOF_T) {
-		printf("Token%i\n  Value:%s\n  Tag:%i\n", i, token.value, token.tag);
-		token = lex_next_token();	
-		i += 1;
-	}
-
-	fseek(SOURCE, 0, SEEK_SET);
-
-	printf("Code: \n");
+	printf("Code:\n");
 	char* output = generate_code();
-	printf(output);
+	printf("%s\n", output);
 	free(output);
 
 	fclose(SOURCE);

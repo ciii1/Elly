@@ -13,8 +13,8 @@
  * (if the operator is += then + is the first operator combination) and returns false otherwise */
 bool is_operator(char ch) {
 	if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || 
-			ch == '=' || ch == '!' || ch == '>' || ch == '<' || 
-			ch == '&' || ch == '|' || ch == '^' || ch == '-') {
+	    ch == '=' || ch == '!' || ch == '>' || ch == '<' || 
+	    ch == '&' || ch == '|' || ch == '^') {
 		return true;
 	} else {
 		return false;
@@ -43,7 +43,7 @@ bool is_symbol(char ch) {
 }
 
 /* the following function returns the tag of a keyword if the given char* argument is a keyword, else it returns VARIABLE_T */
-Tag get_keyword_tag(char *str) {
+tag_t get_keyword_tag(char *str) {
 	if (strcmp(str, "for") == 0) {
 		return FOR_T;
 	} else if (strcmp(str, "while") == 0) {
@@ -91,12 +91,13 @@ char NEXT() {
 	return PEEK();
 }
 
-/* generate next token */
-Token lex_next_token() {
+/* generate current token and move fseek*/
+token_t lex_next_token() {
 	signed char ch = PEEK();
 	char str[32];
 	int str_counter = 0;
-	Tag tag;
+	tag_t tag;
+	tag_t tag2;
 
 	/* skip whitespaces and comments*/
 	if (ch == '#') {
@@ -154,23 +155,111 @@ Token lex_next_token() {
 		ch = NEXT();
 		tag = STRING_T;
 	} else if (is_operator(ch)) { /* if it's one of the operators */
+		switch (ch) { /* generate tag2 */
+			case '+':
+				tag2 = ADD_OPR_T;
+				break;
+			case '-':
+				tag2 = SUB_OPR_T;
+				break;
+			case '*':
+				tag2 = MUL_OPR_T;
+				break;
+			case '/':
+				tag2 = DIV_OPR_T;
+				break;
+			case '|':
+				tag2 = OR_OPR_T;
+				break;
+			case '&':
+				tag2 = AND_OPR_T;
+				break;
+			case '^':
+				tag2 = XOR_OPR_T;	
+				break;
+			case '<':
+				tag2 = CLESS_OPR_T;
+				break;
+			case '>':
+				tag2 = CGREATER_OPR_T;
+				break;
+			case '%':
+				tag2 = MOD_OPR_T;	
+				break;
+			case '=':
+				tag2 = ASSIGNMENT_OPR_T;	
+				break;
+		}
 		str[str_counter] = ch;
 		str_counter++;
 		char head_operator = ch; /* to be checked with the trailing operator */
 		ch = NEXT();
 		if (is_operator(ch)) {
-			if (ch == '=' ||  /* allow = after all operator */
-			    ch == '&' && head_operator == '&' || /* allow & after & (&&)*/
-			    ch == '|' && head_operator == '|' ){  /* allow | after | (||)*/
+			if (ch == '=') {  /* allow = after all operator */
+				switch (ch) { /* generate tag2 */
+					case '+':
+						tag2 = INC_OPR_T;
+						break;
+					case '-':
+						tag2 = DEC_OPR_T;
+						break;
+					case '*':
+						tag2 = MUL_ASSIGN_OPR_T;
+						break;
+					case '/':
+						tag2 = DIV_ASSIGN_OPR_T;
+						break;
+					case '|':
+						tag2 = OR_ASSIGN_OPR_T;
+						break;
+					case '&':
+						tag2 = AND_ASSIGN_OPR_T;
+						break;
+					case '^':
+						tag2 = XOR_ASSIGN_OPR_T;	
+						break;
+					case '<':
+						tag2 = CLESS_EQU_OPR_T;
+						break;
+					case '>':
+						tag2 = CGREATER_EQU_OPR_T;
+						break;
+					case '%':
+						tag2 = MOD_ASSIGN_OPR_T;
+						break;
+					case '=':
+						tag2 = CEQU_OPR_T;	
+						break;
+				}
 				str[str_counter] = ch;
 				str_counter++;
-				ch = NEXT();	
+				ch = NEXT();
+			} else if (ch == '&' && head_operator == '&' ) { /* allow & after & (&&)*/
+				tag2 = LAND_OPR_T;
+				str[str_counter] = ch;
+				str_counter++;
+				ch = NEXT();
+			} else if (ch == '|' && head_operator == '|' ) { /* allow | after | (||)*/
+				tag2 = LOR_OPR_T;
+				str[str_counter] = ch;
+				str_counter++;
+				ch = NEXT();
 			} else if (ch == '>' && head_operator == '>' || /* allow > after > (>>) */
 			           ch == '<' && head_operator == '<' ){ /* allow < after < (<<) */	
+				if (head_operator == '>') {
+					tag2 = SHR_OPR_T;
+				} else if (head_operator == '<') {
+					tag2 = SHL_OPR_T;
+				}
 				str[str_counter] = ch;
 				str_counter++;
 				ch = NEXT();
 				if (ch == '=') {
+					if (head_operator == '>') {
+						tag2 = SHR_ASSIGN_OPR_T;
+					} else if (head_operator == '<') {
+						tag2 = SHL_ASSIGN_OPR_T;
+					}
 					str[str_counter] = ch;
 					str_counter++;
 					ch = NEXT();
@@ -201,18 +290,39 @@ Token lex_next_token() {
 		}
 	}
 
-	return t_init_token(str, tag);
+	return t_init_token(str, tag, tag2);
 }	
 
-/* generate next token but don't move the fseek */
-Token lex_peek_token() {
+/* generate current token but don't move the fseek */
+token_t lex_peek_token() {
 	/* store all the compiler variables */
 	int curr_char = CHAR;
 	int curr_col = COLUMN;
 	int curr_line = LINE;
 
 	/* get next token */
-	Token token = lex_next_token();
+	token_t token = lex_next_token();
+
+	/* fseek back */
+	fseek(SOURCE, curr_char-1, SEEK_SET);
+
+	/* restore the compiler variables */
+	CHAR = curr_char;
+	COLUMN = curr_col;
+	LINE = curr_line;
+
+	return token;
+}
+/* generate next token and don't move the fseek */
+token_t lex_jump_peek_token() {
+	/* store all the compiler variables */
+	int curr_char = CHAR;
+	int curr_col = COLUMN;
+	int curr_line = LINE;
+
+	/* get next of next token */
+	lex_next_token();	
+	token_t token = lex_next_token();
 
 	/* fseek back */
 	fseek(SOURCE, curr_char-1, SEEK_SET);
