@@ -54,6 +54,8 @@ short bp_of(token_t val) {
 		case XOR_ASSIGN_OPR_T:
 			return 1;
 			break;
+		default:
+			return 0;
 	}
 }
 
@@ -91,6 +93,99 @@ bool is_r_assoc(token_t val) {
 	}
 }
 
+/* return NULL if the token is not an operator (+, -, *, /, |, &, ^, >, <, %, =,  ||, &&, >>, <<, ==, -=, +=, -=, *=, /=, |= &=, <= , >=, >>=, <<=, ^=) 
+ * Otherwise, returns the elly instruction function of the 'operator' */
+char* get_operator(token_t operator) {
+	switch (operator.tag2) {
+		case ADD_OPR_T:
+			return "__add__";
+			break;
+		case SUB_OPR_T:
+			return "__sub__";
+			break;
+		case MUL_OPR_T:
+			return "__mul__";
+			break;
+		case DIV_OPR_T:
+			return "__div__";
+			break;
+		case MOD_OPR_T:
+			return "__mod__";
+			break;
+		case AND_OPR_T:
+			return "__and__";
+			break;
+		case OR_OPR_T:
+			return "__ror__";
+			break;
+		case XOR_OPR_T:
+			return "__xor__";
+			break;
+		case CGREATER_OPR_T:
+			return "__cgr__";
+			break;
+		case CLESS_OPR_T:
+			return "__cls__";
+			break;
+		case ASSIGNMENT_OPR_T:
+			return "__mov__";
+			break;
+		case INC_OPR_T:
+			return "__inc__";
+			break;
+		case DEC_OPR_T:
+			return "__dec__";
+			break;
+		case MUL_ASSIGN_OPR_T:
+			return "__mulm_";
+			break;
+		case DIV_ASSIGN_OPR_T:
+			return "__divm_";
+			break;
+		case MOD_ASSIGN_OPR_T:
+			return "__modm_";
+			break;
+		case AND_ASSIGN_OPR_T:
+			return "__andm_";
+			break;
+		case OR_ASSIGN_OPR_T:
+			return "__rorm_";
+			break;
+		case XOR_ASSIGN_OPR_T:
+			return "__xorm_";
+			break;
+		case CGREATER_EQU_OPR_T:
+			return "__cge__";
+			break;
+		case CLESS_EQU_OPR_T:
+			return "__cle__";
+			break;
+		case CEQU_OPR_T:
+			return "__equ__";
+			break;
+		case LAND_OPR_T:
+			return "__land_";
+			break;
+		case LOR_OPR_T:
+			return "__lor__";
+			break;
+		case SHR_OPR_T:
+			return "__shr__";
+			break;
+		case SHL_OPR_T:
+			return "__shl__";
+			break;
+		case SHR_ASSIGN_OPR_T:
+			return "__shrm_";
+			break;
+		case SHL_ASSIGN_OPR_T:
+			return "__shlm__";
+			break;
+		default:
+			return NULL;
+	}
+}
+
 /* return false if the token is not a value (wether it's a constant or not).
  * Otherwise, append the generated output to w_area and return true */
 bool gen_value(dstr_t* w_area) {
@@ -110,214 +205,32 @@ bool gen_value(dstr_t* w_area) {
 	}
 }
 
-/* return false if the token is not an operator (+, -, *, /, |, &, ^, >, <, %, =,  ||, &&, >>, <<, ==, -=, +=, -=, *=, /=, |= &=, <= , >=, >>=, <<=, ^=)
- * or if the operation is invalid (ie. <int> = <int>).
- * Otherwise, append the generated output to w_area
- * Example of generated output = 1.2 + 1 --> __faddi__( ,  "aaa" + 1 --> __saddi__( , var + 1 --> _vaddi_*/
-bool gen_operator(dstr_t* w_area, bool is_loperation, token_t lvalue, token_t rvalue) {
-	token_t operator = lex_next_token();
-
-	switch (operator.tag2) {
-		case ADD_OPR_T:
-			dstr_append(w_area, "__add__");
-			break;
-		case SUB_OPR_T:
-			dstr_append(w_area, "__sub__");
-			break;
-		case MUL_OPR_T:
-			dstr_append(w_area, "__mul__");
-			break;
-		case DIV_OPR_T:
-			dstr_append(w_area, "__div__");
-			break;
-		case MOD_OPR_T:
-			dstr_append(w_area, "__mod__");
-			break;
-		case AND_OPR_T:
-			dstr_append(w_area, "__and__");
-			break;
-		case OR_OPR_T:
-			dstr_append(w_area, "__ror__");
-			break;
-		case XOR_OPR_T:
-			dstr_append(w_area, "__xor__");
-			break;
-		case CGREATER_OPR_T:
-			dstr_append(w_area, "__cgr__");
-			break;
-		case CLESS_OPR_T:
-			dstr_append(w_area, "__cls__");
-			break;
-		case ASSIGNMENT_OPR_T:
-			dstr_append(w_area, "__mov__");
-			break;
-		case INC_OPR_T:
-			dstr_append(w_area, "__inc__");
-			break;
-		case DEC_OPR_T:
-			dstr_append(w_area, "__dec__");
-			break;
-		case MUL_ASSIGN_OPR_T:
-			dstr_append(w_area, "__mulm_");
-			break;
-		case DIV_ASSIGN_OPR_T:
-			dstr_append(w_area, "__divm_");
-			break;
-		case MOD_ASSIGN_OPR_T:
-			dstr_append(w_area, "__modm_");
-			break;
-		case AND_ASSIGN_OPR_T:
-			dstr_append(w_area, "__andm_");
-			break;
-		case OR_ASSIGN_OPR_T:
-			dstr_append(w_area, "__rorm_");
-			break;
-		case XOR_ASSIGN_OPR_T:
-			dstr_append(w_area, "__xorm_");
-			break;
-		case CGREATER_EQU_OPR_T:
-			dstr_append(w_area, "__cge__");
-			break;
-		case CLESS_EQU_OPR_T:
-			dstr_append(w_area, "__cle__");
-			break;
-		case CEQU_OPR_T:
-			dstr_append(w_area, "__equ__");
-			break;
-		case LAND_OPR_T:
-			dstr_append(w_area, "__land_");
-			break;
-		case LOR_OPR_T:
-			dstr_append(w_area, "__lor__");
-			break;
-		case SHR_OPR_T:
-			dstr_append(w_area, "__shr__");
-			break;
-		case SHL_OPR_T:
-			dstr_append(w_area, "__shl__");
-			break;
-		case SHR_ASSIGN_OPR_T:
-			dstr_append(w_area, "__shrm_");
-			break;
-		case SHL_ASSIGN_OPR_T:
-			dstr_append(w_area, "__shlm__");
-			break;
-		default:
-			return false;
-			break;
-	}
-}
 
 /* return false if the expression is invalid.
  * Otherwise, append the generated output to w_area
- * example: a+b*c --> __e_add__(a, __e_mul__(b, c)). */
-bool gen_operation(dstr_t* w_area) {
-	dstr_t buff_area; /* area that is used to write a half finished operation */
-	dstr_init(&buff_area);
+ * example: a+b*c --> __e_add__(a, __e_mul__(b, c)). 
+ * we use pratt-parsing-like algorithm to handle precedence*/
+bool gen_operation(dstr_t* w_area, int rbp) {
+	dstr_t buff;
+	dstr_init(&buff);
 
-	dstr_t w_t_area; /* temporary write area */
-	dstr_init(&w_t_area);
-	
-	int bp = 0;
-	int r_bp = 0;
-	int min_bp = 0;
+	gen_value(&buff);
+	while (bp_of(lex_peek_token()) > rbp) {
+		/* operator and rvalue */
+		token_t operator = lex_next_token();
+		dstr_append(&buff, ",");
+		gen_operation(&buff, bp_of(operator));
 
-	int l_parens = 0; /* counter for how much initial function calls part we need to insert before the generated expression */
-	int in_l_parens = 0;
-	int r_parens = 0; /* counter for how much ')' we need to insert after the generated expression */
-
-	/* generate the first left operator */
-	if (!gen_value(&w_t_area)) {
-		return false;	
-	}
-
-	token_t operator;
-	token_t r_operator;
-	
-	while (lex_peek_token().tag == OPERATOR_T) {
-		operator = lex_next_token();
-		r_operator = lex_jump_peek_token();
-
-		bp = bp_of(operator);
-		r_bp = bp_of(r_operator);
-		if (bp <= min_bp || min_bp == 0) {
-			/* append w_t_area to buff_area */
-			for (int i = 0; i < in_l_parens; i++) {
-				dstr_append(&buff_area, "(");
-			}
-			dstr_append(&buff_area, w_t_area.str);
-			for (int i = 0; i < r_parens; i++) {
-				dstr_append(&buff_area, ")");
-			}
-			/* insert the low left assoc*/
-			if (min_bp != 0) {
-				dstr_append(&buff_area, ")");
-				l_parens++;
-			}
-
-			min_bp = bp;
-			
-			/* append the operator */
-			dstr_append(&buff_area, operator.value);
-
-			in_l_parens = 0;
-			r_parens = 0;
-
-			dstr_erase(&w_t_area);
-
-			/* append the operand */
-			gen_value(&w_t_area);
-		} else if (bp < r_bp) {
-			/* append the operator */
-			dstr_append(&w_t_area, operator.value);
-
-			/* up the operator precedence */
-			dstr_append(&w_t_area, "(");
-			r_parens++;
-
-			/* append the operand */
-			gen_value(&w_t_area);
-		} else {
-			/* append operator and operand */
-			dstr_append(&w_t_area, operator.value);
-			gen_value(&w_t_area);
-			
-			/* down the operator precedence */
-			for (int i = 0; i <= bp - r_bp && r_parens > 0; i++) {
-				dstr_append(&w_t_area, ")");
-				r_parens--;
-			}
-
-			/* left assoc */
-			dstr_append(&w_t_area, ")");
-			in_l_parens++;
-		}
-	}
-
-	/* write buff_area to the real write area*/
-
-	/* insert the low l_parens */
-	for (int i = 0; i < l_parens; i++) {
+		/* the left assoc */
+		dstr_append(&buff, ")");
+		dstr_append(w_area, get_operator(operator)); /* the left parens */
 		dstr_append(w_area, "(");
 	}
+	
+	/* insert the buffer */
+	dstr_append(w_area, buff.str);
 
-	dstr_append(w_area, buff_area.str);
-	
-	/* write the lefted w_t_area */
-	
-	/* insert the in_l_parens */
-	for (int i = 0; i < in_l_parens; i++) {
-		dstr_append(w_area, "(");
-	}
-
-	dstr_append(w_area, w_t_area.str);
-	
-	for (int i = 0; i < r_parens; i++) {
-		dstr_append(w_area, ")");
-	}
-	
-	dstr_free(&w_t_area);
-	dstr_free(&buff_area);
+	dstr_free(&buff);
 
 	return true;
 }
@@ -335,7 +248,7 @@ char* generate_code() {
 			lex_next_token();
 		}
 
-		if (!(gen_operation(&w_area))){/* try to match all the grammar */
+		if (!(gen_operation(&w_area, 0))){/* try to match all the grammar */
 			char msg[18+MAX_TOKEN_VALUE];
 			sprintf(msg, "unexpected token: %s", lex_peek_token().value);
 			print_error(msg);

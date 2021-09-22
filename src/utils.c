@@ -35,11 +35,6 @@ void dstr_init(dstr_t* dstr) {
 	dstr->end = dstr->str;
 }
 
-void dstr_append(dstr_t* dest, char* str) {
-	dest->end = stracpy(str, dest->end);
-	dest->end++;
-}
-
 void dstr_erase(dstr_t* dstr) {
 	while (dstr->end != dstr->str) {
 		*dstr->end = 0;
@@ -49,5 +44,11 @@ void dstr_erase(dstr_t* dstr) {
 }
 
 void dstr_free(dstr_t* dstr) {
+	if (dstr->end != dstr->str)
+		dstr_erase(dstr);
 	free(dstr->str);
+}
+
+void dstr_append(dstr_t* dest, char* str) {
+	dest->end = stracpy(str, dest->end)+1;
 }
