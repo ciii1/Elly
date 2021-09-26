@@ -18,7 +18,7 @@ enum tags{
  ELSE_T,
  BREAK_T,
  CONTINUE_T,
-}
+};
 /* TAG2 */
 enum tags2{
  ADD_OPR_T,
@@ -49,7 +49,7 @@ enum tags2{
  SHL_OPR_T,
  SHR_ASSIGN_OPR_T,
  SHL_ASSIGN_OPR_T,
-}
+};
 
 #define MAX_TOKEN_VALUE 50
 #define INIT_DSTR_SPACE 2048
