@@ -16,8 +16,8 @@
 
 
 /* return the binding power (precedence) of 'val' */
-short bp_of(token_t val) {
-	switch (val.tag2) {
+short bp_of(tag_t tag2) {
+	switch (tag2) {
 		case MUL_OPR_T:
 		case DIV_OPR_T:
 		case MOD_OPR_T:
@@ -55,13 +55,13 @@ short bp_of(token_t val) {
 			return 1;
 			break;
 		default:
-			return 0;
+			return -1;
 	}
 }
 
 /* return the associativity of 'val' */
-bool is_r_assoc(token_t val) {
-	switch (val.tag2) {
+bool is_r_assoc(tag_t tag2) {
+	switch (tag2) {
 		case MUL_OPR_T:
 		case DIV_OPR_T:
 		case MOD_OPR_T:
@@ -95,8 +95,8 @@ bool is_r_assoc(token_t val) {
 
 /* return NULL if the token is not an operator (+, -, *, /, |, &, ^, >, <, %, =,  ||, &&, >>, <<, ==, -=, +=, -=, *=, /=, |= &=, <= , >=, >>=, <<=, ^=) 
  * Otherwise, returns the elly instruction function of the 'operator' */
-char* get_operator(token_t operator) {
-	switch (operator.tag2) {
+char* get_operator(tag_t tag2) {
+	switch (tag2) {
 		case ADD_OPR_T:
 			return "__add__";
 			break;
@@ -188,51 +188,86 @@ char* get_operator(token_t operator) {
 
 /* return false if the token is not a value (wether it's a constant or not).
  * Otherwise, append the generated output to w_area and return true */
-bool gen_value(dstr_t* w_area) {
-	token_t token = lex_next_token();
-	if (token.tag == VARIABLE_T) { /* TODO: check if the variable exists or not with hashtable lookup() */
-		return false;
-	} else if (token.tag == FLOAT_T || token.tag == INT_T) {
-		dstr_append(w_area, token.value);
-		return true;
-	} else if (token.tag == STRING_T) {
-		dstr_append(w_area, "\"");
-		dstr_append(w_area, token.value);
-		dstr_append(w_area, "\"");
-		return true;
-	} else {
-		return false;
+char gen_value(dstr_t* w_area) {
+	token_t token = lex_peek_token();
+	switch (token.tag) {
+		case VARIABLE_T: /* TODO: check if the variable exists or not with hashtable lookup() */
+			return false;
+	 	case FLOAT_T:
+		case INT_T:
+			dstr_append(w_area, token.value);
+			lex_next_token();
+			return 'n';
+		case STRING_T: 
+			dstr_append(w_area, "\"");
+			dstr_append(w_area, token.value);
+			dstr_append(w_area, "\"");
+			lex_next_token();
+			return 's';
+		default:
+			return false;
 	}
 }
 
 
-/* return false if the expression is invalid.
- * Otherwise, append the generated output to w_area
+/* return 0 if the expression is invalid.
+ * Otherwise, return the first char of the expression type (i.e variable = 'v', int/float = 'n')
  * example: a+b*c --> __e_add__(a, __e_mul__(b, c)). 
  * we use pratt-parsing-like algorithm to handle precedence*/
-bool gen_operation(dstr_t* w_area, int rbp) {
+char gen_operation(dstr_t* w_area, int rbp) {
 	dstr_t buff;
 	dstr_init(&buff);
 
-	gen_value(&buff);
-	while (bp_of(lex_peek_token()) > rbp) {
-		/* operator and rvalue */
-		token_t operator = lex_next_token();
-		dstr_append(&buff, ",");
-		gen_operation(&buff, bp_of(operator));
+	/* TODO: make this dynamic */
+	tag_t l_parens[100]; /* contains tag2s of operators*/
+	int lp_counter = 0;
+	char l_type;
+	char r_type;
+	tag_t o_tag2; /* operator tag2 */
+
+	if(!(l_type = gen_value(&buff))) {
+	       	return false;
+	}
+
+	while (bp_of(lex_peek_token().tag2) > rbp) {
+		/*append the type of lvalue */
+		dstr_append(&buff, ", \'");
+		dstr_append_char(&buff, l_type);
+		dstr_append(&buff, "\'");
+
+		/* insert ',' and rvalue */
+		o_tag2 = lex_next_token().tag2;
+		dstr_append(&buff, ", ");
+		if(!(r_type = gen_operation(&buff, bp_of(o_tag2)))) {
+			return false;	
+		}
+
+		/*append the type of rvalue */
+		dstr_append(&buff, ", \'");
+		dstr_append_char(&buff, r_type);
+		dstr_append(&buff, "\'");
 
 		/* the left assoc */
 		dstr_append(&buff, ")");
-		dstr_append(w_area, get_operator(operator)); /* the left parens */
-		dstr_append(w_area, "(");
+		l_parens[lp_counter] = o_tag2;
+		lp_counter++;
+		
+		printf("", o_tag2); /* Without this, somehow it produces weird error */
 	}
-	
+	dstr_append_char(&buff, '\0');
+
+	/* insert l_parens in reverse order */
+	for (int i = lp_counter-1; i >= 0; i--) {
+		dstr_append(w_area, get_operator(l_parens[i]));
+		dstr_append_char(w_area, '(');
+	}
+
 	/* insert the buffer */
 	dstr_append(w_area, buff.str);
 
 	dstr_free(&buff);
 
-	return true;
+	return l_type;
 }
 
 /* main entry, return a char pointer to the generated C code
@@ -242,23 +277,17 @@ char* generate_code() {
 	dstr_init(&w_area);
 
 	do {
-		/* cut endlines 
-		 * TODO: change the delimiter to optional ';', like js, it's easier to handle and to code with*/
-		while (lex_peek_token().tag == EOL_T) {
-			lex_next_token();
-		}
-
 		if (!(gen_operation(&w_area, 0))){/* try to match all the grammar */
 			char msg[18+MAX_TOKEN_VALUE];
 			sprintf(msg, "unexpected token: %s", lex_peek_token().value);
 			print_error(msg);
 		}
 		
-		/* cut endlines */
-		while (lex_peek_token().tag == EOL_T) {
+		if (lex_peek_token().tag == SEMICOLON_T) {
 			lex_next_token();
 		}
-	} while(lex_next_token().tag != EOF_T);
+		dstr_append(&w_area, ";\n");
+	} while(lex_peek_token().tag != EOF_T);
 
 	return w_area.str;
 }
