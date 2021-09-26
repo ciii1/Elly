@@ -52,3 +52,8 @@ void dstr_free(dstr_t* dstr) {
 void dstr_append(dstr_t* dest, char* str) {
 	dest->end = stracpy(str, dest->end)+1;
 }
+
+void dstr_append_char(dstr_t* dest, char ch) {
+	*(dest->end) = ch;
+	dest->end++;
+}

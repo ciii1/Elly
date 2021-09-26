@@ -100,14 +100,16 @@ token_t lex_next_token() {
 	tag_t tag2;
 
 	/* skip whitespaces and comments*/
-	if (ch == '#') {
+	while (ch == '#') {
 		while (ch != '\n') {
 			ch = NEXT();
 		}
-	} else if (ch == ' ' || ch == '\t') {
-		while (ch == ' ' || ch == '\t') {
+       		while (ch == ' ' || ch == '\t' || ch == '\n') {
 			ch = NEXT();
 		}
+	} 
+       	while (ch == ' ' || ch == '\t' || ch == '\n') {
+		ch = NEXT();
 	}
 
 	if (ch == EOF) {
@@ -272,6 +274,11 @@ token_t lex_next_token() {
 		ch = NEXT();
   		str_counter++;
 		tag = SYMBOL_T;		
+	} else if (ch == ';') {
+	 	str[str_counter] = ch;
+		ch = NEXT();
+  		str_counter++;
+		tag = SEMICOLON_T;
 	} else { /*else, error*/
 		print_error("Invalid token");
 	}
@@ -280,14 +287,16 @@ token_t lex_next_token() {
 	str[str_counter] = '\0';
 
 	/* skip whitespaces and comments*/
-	if (ch == '#') {
+	while (ch == '#') {
 		while (ch != '\n') {
 			ch = NEXT();
 		}
-	} else if (ch == ' ' || ch == '\t') {
-		while (ch == ' ' || ch == '\t') {
+       		while (ch == ' ' || ch == '\t' || ch == '\n') {
 			ch = NEXT();
 		}
+	} 
+       	while (ch == ' ' || ch == '\t' || ch == '\n') {
+		ch = NEXT();
 	}
 
 	return t_init_token(str, tag, tag2);

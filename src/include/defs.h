@@ -18,6 +18,7 @@ enum tags{
  ELSE_T,
  BREAK_T,
  CONTINUE_T,
+ SEMICOLON_T
 };
 /* TAG2 */
 enum tags2{
