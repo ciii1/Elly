@@ -270,10 +270,33 @@ token_t lex_next_token() {
 		}
 		tag = OPERATOR_T;
 	} else if (is_symbol(ch)) { /* if it's one of the symbols */
+		switch(ch) {
+			case '(':
+				tag2 = LEFT_PAREN_T;
+				break;
+			case ')':
+				tag2 = RIGHT_PAREN_T;
+				break;
+			case '{':
+				tag2 = LEFT_SEMICOLON_T;
+				break;
+			case '}':
+				tag2 = RIGHT_SEMICOLON_T;
+				break;
+			case '[':
+				tag2 = LEFT_BLOCK_T;
+				break;
+			case ']':
+				tag2 = RIGHT_BLOCK_T;
+				break;
+			case ',':
+				tag2 = COMMA_T;	
+				break;
+		}
 	 	str[str_counter] = ch;
 		ch = NEXT();
   		str_counter++;
-		tag = SYMBOL_T;		
+		tag = SYMBOL_T;	
 	} else if (ch == ';') {
 	 	str[str_counter] = ch;
 		ch = NEXT();

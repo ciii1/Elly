@@ -194,10 +194,13 @@ char gen_value(dstr_t* w_area) {
 		case VARIABLE_T: /* TODO: check if the variable exists or not with hashtable lookup() */
 			return false;
 	 	case FLOAT_T:
+			dstr_append(w_area, token.value);
+			lex_next_token();
+			return 'f';
 		case INT_T:
 			dstr_append(w_area, token.value);
 			lex_next_token();
-			return 'n';
+			return 'i';
 		case STRING_T: 
 			dstr_append(w_area, "\"");
 			dstr_append(w_area, token.value);
@@ -225,7 +228,16 @@ char gen_operation(dstr_t* w_area, int rbp) {
 	char r_type;
 	tag_t o_tag2; /* operator tag2 */
 
-	if(!(l_type = gen_value(&buff))) {
+	if(lex_peek_token().tag2 == LEFT_PAREN_T) {
+		lex_next_token();
+		if(!gen_operation(&buff, 0)) {
+			return false;
+		}
+		printf("aa\n");
+		if(lex_next_token().tag2 != RIGHT_PAREN_T) {
+			return false;
+		}
+	} else if(!(l_type = gen_value(&buff))) {
 	       	return false;
 	}
 
@@ -233,22 +245,32 @@ char gen_operation(dstr_t* w_area, int rbp) {
 		/*append the type of lvalue */
 		dstr_append(&buff, ", \'");
 		dstr_append_char(&buff, l_type);
-		dstr_append(&buff, "\'");
+		dstr_append_char(&buff, '\'');
 
 		/* insert ',' and rvalue */
+		if(lex_peek_token().tag2 == LEFT_PAREN_T) {
+			lex_next_token();
+			if(!gen_operation(&buff, 0)) {
+				return false;
+			}
+			printf("aa\n");
+			if(lex_next_token().tag2 != RIGHT_PAREN_T) {
+				return false;
+			}
+		}
 		o_tag2 = lex_next_token().tag2;
 		dstr_append(&buff, ", ");
 		if(!(r_type = gen_operation(&buff, bp_of(o_tag2)))) {
 			return false;	
 		}
-
+	
 		/*append the type of rvalue */
 		dstr_append(&buff, ", \'");
 		dstr_append_char(&buff, r_type);
-		dstr_append(&buff, "\'");
+		dstr_append_char(&buff, '\'');
 
 		/* the left assoc */
-		dstr_append(&buff, ")");
+		dstr_append_char(&buff, ')');
 		l_parens[lp_counter] = o_tag2;
 		lp_counter++;
 		
