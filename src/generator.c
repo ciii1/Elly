@@ -225,7 +225,8 @@ char gen_operation(dstr_t* w_area, int rbp) {
 	tag_t l_parens[100]; /* contains tag2s of operators*/
 	int lp_counter = 0;
 	char l_type;
-	char r_type;
+	char r_type[100]; /* contains types of rvalues */
+	int rt_counter = 0;
 	tag_t o_tag2; /* operator tag2 */
 
 	if(lex_peek_token().tag2 == LEFT_PAREN_T) {
@@ -233,7 +234,6 @@ char gen_operation(dstr_t* w_area, int rbp) {
 		if(!gen_operation(&buff, 0)) {
 			return false;
 		}
-		printf("aa\n");
 		if(lex_next_token().tag2 != RIGHT_PAREN_T) {
 			return false;
 		}
@@ -242,11 +242,6 @@ char gen_operation(dstr_t* w_area, int rbp) {
 	}
 
 	while (bp_of(lex_peek_token().tag2) > rbp) {
-		/*append the type of lvalue */
-		dstr_append(&buff, ", \'");
-		dstr_append_char(&buff, l_type);
-		dstr_append_char(&buff, '\'');
-
 		/* insert ',' and rvalue */
 		if(lex_peek_token().tag2 == LEFT_PAREN_T) {
 			lex_next_token();
@@ -260,15 +255,11 @@ char gen_operation(dstr_t* w_area, int rbp) {
 		}
 		o_tag2 = lex_next_token().tag2;
 		dstr_append(&buff, ", ");
-		if(!(r_type = gen_operation(&buff, bp_of(o_tag2)))) {
+		if(!(r_type[rt_counter] = gen_operation(&buff, bp_of(o_tag2)))) {
 			return false;	
 		}
+		rt_counter++;
 	
-		/*append the type of rvalue */
-		dstr_append(&buff, ", \'");
-		dstr_append_char(&buff, r_type);
-		dstr_append_char(&buff, '\'');
-
 		/* the left assoc */
 		dstr_append_char(&buff, ')');
 		l_parens[lp_counter] = o_tag2;
@@ -282,6 +273,16 @@ char gen_operation(dstr_t* w_area, int rbp) {
 	for (int i = lp_counter-1; i >= 0; i--) {
 		dstr_append(w_area, get_operator(l_parens[i]));
 		dstr_append_char(w_area, '(');
+
+		/*append the type of lvalue */
+		dstr_append_char(w_area, '\'');
+		dstr_append_char(w_area, l_type);
+		dstr_append(w_area, "\', ");
+
+		/*append the type of rvalues */
+		dstr_append_char(w_area, '\'');
+		dstr_append_char(w_area, r_type[i]);
+		dstr_append(w_area, "\', ");
 	}
 
 	/* insert the buffer */
