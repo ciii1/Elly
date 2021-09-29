@@ -7,7 +7,7 @@
 #include "include/defs.h"
 #include "include/types.h"
 #include "include/compiler.h"
-#include "include/utils.h"
+#include "include/dstr.h"
 
 /* the following function returns true if the argument 'ch' given is one of the first operator combination 
  * (if the operator is += then + is the first operator combination) and returns false otherwise */
