@@ -10,13 +10,13 @@
 #include "include/compiler.h"
 #include "include/lexer.h"
 #include "include/dstr.h"
+#include "ht/ht.h"
 
 #define OUTPUT_SIZE 16777216 /* 8^8 */
 
 
-
 /* return the binding power (precedence) of 'val' */
-short bp_of(tag_t tag2) {
+short expr_bp_of(tag_t tag2) {
 	switch (tag2) {
 		case MUL_OPR_T:
 		case DIV_OPR_T:
@@ -60,7 +60,7 @@ short bp_of(tag_t tag2) {
 }
 
 /* return the associativity of 'val' */
-bool is_r_assoc(tag_t tag2) {
+bool expr_is_r_assoc(tag_t tag2) {
 	switch (tag2) {
 		case MUL_OPR_T:
 		case DIV_OPR_T:
@@ -95,7 +95,7 @@ bool is_r_assoc(tag_t tag2) {
 
 /* return NULL if the token is not an operator (+, -, *, /, |, &, ^, >, <, %, =,  ||, &&, >>, <<, ==, -=, +=, -=, *=, /=, |= &=, <= , >=, >>=, <<=, ^=) 
  * Otherwise, returns the elly instruction function of the 'operator' */
-char* get_operator(tag_t tag2) {
+char* expr_get_operator(tag_t tag2) {
 	switch (tag2) {
 		case ADD_OPR_T:
 			return "__add__";
@@ -188,7 +188,7 @@ char* get_operator(tag_t tag2) {
 
 /* return false if the token is not a value (wether it's a constant or not).
  * Otherwise, append the generated output to w_area and return true */
-char gen_value(dstr_t* w_area) {
+char expr_gen_value(dstr_t* w_area) {
 	token_t token = lex_peek_token();
 	switch (token.tag) {
 		case VARIABLE_T: /* TODO: check if the variable exists or not with hashtable lookup() */
@@ -212,12 +212,11 @@ char gen_value(dstr_t* w_area) {
 	}
 }
 
-
 /* return 0 if the expression is invalid.
  * Otherwise, return the first char of the expression type (i.e variable = 'v', int/float = 'n')
  * example: a+b*c --> __e_add__(a, __e_mul__(b, c)). 
  * we use pratt-parsing-like algorithm to handle precedence*/
-char gen_operation(dstr_t* w_area, int rbp) {
+char expr_gen_operation(dstr_t* w_area, int rbp) {
 	dstr_t buff;
 	dstr_init(&buff);
 
@@ -231,21 +230,21 @@ char gen_operation(dstr_t* w_area, int rbp) {
 
 	if(lex_peek_token().tag2 == LEFT_PAREN_T) {
 		lex_next_token();
-		if(!gen_operation(&buff, 0)) {
+		if(!expr_gen_operation(&buff, 0)) {
 			return false;
 		}
 		if(lex_next_token().tag2 != RIGHT_PAREN_T) {
 			return false;
 		}
-	} else if(!(l_type = gen_value(&buff))) {
+	} else if(!(l_type = expr_gen_value(&buff))) {
 	       	return false;
 	}
 
-	while (bp_of(lex_peek_token().tag2) > rbp) {
+	while (expr_bp_of(lex_peek_token().tag2) > rbp) {
 		/* insert ',' and rvalue */
 		if(lex_peek_token().tag2 == LEFT_PAREN_T) {
 			lex_next_token();
-			if(!gen_operation(&buff, 0)) {
+			if(!expr_gen_operation(&buff, 0)) {
 				return false;
 			}
 			printf("aa\n");
@@ -255,7 +254,7 @@ char gen_operation(dstr_t* w_area, int rbp) {
 		}
 		o_tag2 = lex_next_token().tag2;
 		dstr_append(&buff, ", ");
-		if(!(r_type[rt_counter] = gen_operation(&buff, bp_of(o_tag2)))) {
+		if(!(r_type[rt_counter] = expr_gen_operation(&buff, expr_bp_of(o_tag2)))) {
 			return false;	
 		}
 		rt_counter++;
@@ -271,7 +270,7 @@ char gen_operation(dstr_t* w_area, int rbp) {
 
 	/* insert l_parens in reverse order */
 	for (int i = lp_counter-1; i >= 0; i--) {
-		dstr_append(w_area, get_operator(l_parens[i]));
+		dstr_append(w_area, expr_get_operator(l_parens[i]));
 		dstr_append_char(w_area, '(');
 
 		/*append the type of lvalue */
@@ -300,7 +299,7 @@ char* generate_code() {
 	dstr_init(&w_area);
 
 	do {
-		if (!(gen_operation(&w_area, 0))){/* try to match all the grammar */
+		if (!(expr_gen_operation(&w_area, 0))){/* try to match all the grammar */
 			char msg[18+MAX_TOKEN_VALUE];
 			sprintf(msg, "unexpected token: %s", lex_peek_token().value);
 			print_error(msg);

@@ -1,0 +1,3 @@
+[submodule "src/ht"]
+	path = src/ht
+	url = https://github.com/benhoyt/ht.git
