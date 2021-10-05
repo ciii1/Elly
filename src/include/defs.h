@@ -18,7 +18,9 @@ enum tags{
  ELSE_T,
  BREAK_T,
  CONTINUE_T,
- SEMICOLON_T
+ SEMICOLON_T,
+ VAR_T,
+ CONST_T,
 };
 /* TAG2 */
 enum tags2{
@@ -57,7 +59,13 @@ enum tags2{
  LEFT_BLOCK_T,
  RIGHT_BLOCK_T, 
  COMMA_T,
+ DECL_T,
 };
+
+#define E_VARIABLE_STRUCT var_t
+
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
 
 #define MAX_TOKEN_VALUE 50
 #define INIT_DSTR_SPACE 2048

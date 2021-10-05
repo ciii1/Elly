@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 typedef short tag_t;
 
 typedef struct {	
@@ -10,3 +12,7 @@ typedef struct {
 	char* str;
 	char* end;
 } dstr_t;
+
+typedef struct {
+	bool is_const;
+} var_data_t;

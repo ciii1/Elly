@@ -14,6 +14,8 @@
 
 #define OUTPUT_SIZE 16777216 /* 8^8 */
 
+bool is_global_scope;
+ht* global_var_ht;
 
 /* return the binding power (precedence) of 'val' */
 short expr_bp_of(tag_t tag2) {
@@ -191,8 +193,17 @@ char* expr_get_operator(tag_t tag2) {
 char expr_gen_value(dstr_t* w_area) {
 	token_t token = lex_peek_token();
 	switch (token.tag) {
-		case VARIABLE_T: /* TODO: check if the variable exists or not with hashtable lookup() */
-			return false;
+		case VARIABLE_T:
+			var_data_t* var_data;
+			if ((var_data = (var_data_t*)ht_get(global_var_ht, token.value)) == NULL) {
+				char msg[17+MAX_TOKEN_VALUE];
+				sprintf(msg, "undeclared name %s", lex_peek_token().value);
+				exit_error(msg);
+			}
+			dstr_append(w_area, token.value);
+			lex_next_token();
+			return 'v';
+			break;
 	 	case FLOAT_T:
 			dstr_append(w_area, token.value);
 			lex_next_token();
@@ -216,7 +227,7 @@ char expr_gen_value(dstr_t* w_area) {
  * Otherwise, return the first char of the expression type (i.e variable = 'v', int/float = 'n')
  * example: a+b*c --> __e_add__(a, __e_mul__(b, c)). 
  * we use pratt-parsing-like algorithm to handle precedence*/
-char expr_gen_operation(dstr_t* w_area, int rbp) {
+char expr_gen(dstr_t* w_area, int rbp) {
 	dstr_t buff;
 	dstr_init(&buff);
 
@@ -230,13 +241,13 @@ char expr_gen_operation(dstr_t* w_area, int rbp) {
 
 	if(lex_peek_token().tag2 == LEFT_PAREN_T) {
 		lex_next_token();
-		if(!expr_gen_operation(&buff, 0)) {
+		if(!expr_gen(&buff, 0)) {
 			return false;
 		}
 		if(lex_next_token().tag2 != RIGHT_PAREN_T) {
 			return false;
 		}
-	} else if(!(l_type = expr_gen_value(&buff))) {
+	} else if (!(l_type = expr_gen_value(&buff))) {
 	       	return false;
 	}
 
@@ -244,17 +255,16 @@ char expr_gen_operation(dstr_t* w_area, int rbp) {
 		/* insert ',' and rvalue */
 		if(lex_peek_token().tag2 == LEFT_PAREN_T) {
 			lex_next_token();
-			if(!expr_gen_operation(&buff, 0)) {
+			if(!expr_gen(&buff, 0)) {
 				return false;
 			}
-			printf("aa\n");
 			if(lex_next_token().tag2 != RIGHT_PAREN_T) {
 				return false;
 			}
 		}
 		o_tag2 = lex_next_token().tag2;
 		dstr_append(&buff, ", ");
-		if(!(r_type[rt_counter] = expr_gen_operation(&buff, expr_bp_of(o_tag2)))) {
+		if(!(r_type[rt_counter] = expr_gen(&buff, expr_bp_of(o_tag2)))) {
 			return false;	
 		}
 		rt_counter++;
@@ -292,24 +302,100 @@ char expr_gen_operation(dstr_t* w_area, int rbp) {
 	return l_type;
 }
 
+/* return false if not matches the grammar of variable declaration.
+ * Otherwise, returns true */
+bool vardecl_gen(dstr_t* w_area, ht* var_ht) {
+	if (lex_peek_token().tag2 != DECL_T) {
+		return false;
+	}
+
+	char* name;
+	bool is_const;
+
+	/* parse the code */
+	if (lex_next_token().tag == CONST_T) {
+		is_const = true;
+	}
+
+	token_t name_tkn = lex_peek_token();
+	if (name_tkn.tag != VARIABLE_T) {
+		return false;
+	}
+	name = name_tkn.value;
+	/* don't jump to the next token because we're going to parse this with expr_gen() */
+
+	/* check if the item exist on var_ht if we're on a function */
+	if (!is_global_scope) {
+		if (ht_get(var_ht, name) != NULL) {
+			char msg[17+MAX_TOKEN_VALUE];
+			sprintf(msg, "redeclaration of variable %s", lex_peek_token().value);
+			exit_error(msg);
+		}
+	}
+	if (ht_get(global_var_ht, name) != NULL) {
+		char msg[17+MAX_TOKEN_VALUE];
+		sprintf(msg, "redeclaration of global variable %s", lex_peek_token().value);
+		exit_error(msg);
+	}
+	
+	/* if it doesn't exist, insert to the var_ht */
+	var_data_t* var_val;
+	var_val = malloc(sizeof(var_data_t));
+
+	ht_set(var_ht, name, var_val);
+
+	/* generate the code based from the parsed data */
+	dstr_append(w_area, TOSTRING(E_VARIABLE_STRUCT) " ");
+	dstr_append(w_area, name);
+	
+	if(lex_jump_peek_token().tag2 != ASSIGNMENT_OPR_T) {
+		lex_next_token();
+		return true;
+	}
+
+	dstr_append(w_area, ";\n");
+	
+	/* generate the expression */
+	if(!expr_gen(w_area, 0)){
+		return false;
+	}
+
+	var_val->is_const = is_const;
+	return true;
+}
+
+
 /* main entry, return a char pointer to the generated C code
  * (!) NOTE: return value must be freed after use */
 char* generate_code() {
+	is_global_scope = true;
+
 	dstr_t w_area;
 	dstr_init(&w_area);
 
+	if((global_var_ht = ht_create()) == NULL) {
+		printf("FATAL ERROR: failed to initialize ht");
+		exit(1);
+	}
+
 	do {
-		if (!(expr_gen_operation(&w_area, 0))){/* try to match all the grammar */
+		/* try to match all the grammar */
+		if (!vardecl_gen(&w_area, global_var_ht) &&
+		    !expr_gen(&w_area, 0)) { 
 			char msg[18+MAX_TOKEN_VALUE];
 			sprintf(msg, "unexpected token: %s", lex_peek_token().value);
-			print_error(msg);
+			exit_error(msg);
 		}
+		
+		is_global_scope = true;	
 		
 		if (lex_peek_token().tag == SEMICOLON_T) {
 			lex_next_token();
 		}
 		dstr_append(&w_area, ";\n");
 	} while(lex_peek_token().tag != EOF_T);
+
+	ht_destroy(global_var_ht);
 
 	return w_area.str;
 }

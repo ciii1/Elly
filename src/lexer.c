@@ -58,12 +58,16 @@ tag_t get_keyword_tag(char *str) {
 		return FN_T;
 	} else if (strcmp(str, "return") == 0) {
 		return RETURN_T;
-	} else if (strcmp(str, "import") == 0) {
+	} else if (strcmp(str, "include") == 0) {
 		return IMPORT_T;	
 	} else if (strcmp(str, "break") == 0) {
 		return BREAK_T;
 	} else if (strcmp(str, "continue") == 0) {
 		return CONTINUE_T;
+	} else if (strcmp(str, "var") == 0) {
+		return VAR_T;
+	} else if (strcmp(str, "const") == 0) {
+		return CONST_T;
 	} else {
 		return VARIABLE_T;
 	}
@@ -125,6 +129,9 @@ token_t lex_next_token() {
 		}
 		str[str_counter] = '\0';	
 		tag = get_keyword_tag(str); /* analyze if it's a keyword */
+		if (tag == VAR_T || tag == CONST_T) {
+			tag2 = DECL_T;
+		}
 	} else if (isdigit(ch)) { /*if it's a number*/
 		bool is_float = false;
 		while (isdigit(ch)) {	
@@ -151,7 +158,7 @@ token_t lex_next_token() {
 			str_counter++;
 			ch = NEXT();
 			if(ch == '\n') {
-				print_error("Unexpected end of line while scanning string literal");
+				exit_error("Unexpected end of line while scanning string literal");
 			}
 		}
 		ch = NEXT();
@@ -303,7 +310,7 @@ token_t lex_next_token() {
   		str_counter++;
 		tag = SEMICOLON_T;
 	} else { /*else, error*/
-		print_error("Invalid token");
+		exit_error("Invalid token");
 	}
 
 	/* add an escape character after the string */	

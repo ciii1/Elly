@@ -5,6 +5,7 @@
 #include "include/types.h"
 #include "include/lexer.h"
 #include "include/generator.h"
+#include "ht/ht.h"
 
 
 FILE *SOURCE;
@@ -21,7 +22,7 @@ int compile(char *filename) {
 		printf("can't open '%s'\n", filename);
 		return 1;
 	}
-
+	
 	printf("Code:\n");
 	char* output = generate_code();
 	printf("%s\n", output);
