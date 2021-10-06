@@ -276,7 +276,7 @@ char expr_gen(dstr_t* w_area, int rbp) {
 		o_tag2 = lex_next_token().tag2;
 
 		/* check if l_type is const and the operator is one of the assignment operators */
-		if (l_type == 'v' && l_var_data->is_const) {
+		if (l_type == 'v' && l_var_data->is_const || l_type != 'v') {
 			switch(o_tag2) {
 				case ASSIGNMENT_OPR_T:
 				case INC_OPR_T:
