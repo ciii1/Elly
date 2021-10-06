@@ -14,8 +14,7 @@
 
 #define OUTPUT_SIZE 16777216 /* 8^8 */
 
-bool is_global_scope;
-ht* global_var_ht;
+ht* var_ht;
 
 /* return the binding power (precedence) of 'val' */
 short expr_bp_of(tag_t tag2) {
@@ -189,17 +188,12 @@ char* expr_get_operator(tag_t tag2) {
 }
 
 /* return false if the token is not a value (wether it's a constant or not).
- * Otherwise, append the generated output to w_area and return true */
+ * Otherwise, append the generated output to w_area and return the first character of the generated type 
+ * Note: The function wouldn't lookup to check it's existence for us */
 char expr_gen_value(dstr_t* w_area) {
 	token_t token = lex_peek_token();
 	switch (token.tag) {
 		case VARIABLE_T:
-			var_data_t* var_data;
-			if ((var_data = (var_data_t*)ht_get(global_var_ht, token.value)) == NULL) {
-				char msg[17+MAX_TOKEN_VALUE];
-				sprintf(msg, "undeclared name %s", lex_peek_token().value);
-				exit_error(msg);
-			}
 			dstr_append(w_area, token.value);
 			lex_next_token();
 			return 'v';
@@ -234,12 +228,18 @@ char expr_gen(dstr_t* w_area, int rbp) {
 	/* TODO: make this dynamic */
 	tag_t l_parens[100]; /* contains tag2s of operators*/
 	int lp_counter = 0;
+
 	char l_type;
+	token_t l_tkn;
+	var_data_t* l_var_data;
+
 	char r_type[100]; /* contains types of rvalues */
 	int rt_counter = 0;
 	tag_t o_tag2; /* operator tag2 */
 
-	if(lex_peek_token().tag2 == LEFT_PAREN_T) {
+	l_tkn = lex_peek_token();
+
+	if(l_tkn.tag2 == LEFT_PAREN_T) {
 		lex_next_token();
 		if(!expr_gen(&buff, 0)) {
 			return false;
@@ -249,6 +249,16 @@ char expr_gen(dstr_t* w_area, int rbp) {
 		}
 	} else if (!(l_type = expr_gen_value(&buff))) {
 	       	return false;
+	}
+
+	/* check if the variable exist on ht and store the result to l_var_data, else, error 
+	 * (the expr_gen_value() wouldn't check if a name exists or not*/
+	if (l_type == 'v') {
+		if ((l_var_data = (var_data_t*)ht_get(var_ht, l_tkn.value)) == NULL) {
+			char msg[17+MAX_TOKEN_VALUE];
+			sprintf(msg, "undeclared name %s", l_tkn.value);
+			exit_error(msg);
+		}
 	}
 
 	while (expr_bp_of(lex_peek_token().tag2) > rbp) {
@@ -262,7 +272,22 @@ char expr_gen(dstr_t* w_area, int rbp) {
 				return false;
 			}
 		}
+
 		o_tag2 = lex_next_token().tag2;
+
+		/* check if l_type is const and the operator is one of the assignment operators */
+		if (l_type == 'v' && l_var_data->is_const) {
+			switch(o_tag2) {
+				case ASSIGNMENT_OPR_T:
+				case INC_OPR_T:
+				case DEC_OPR_T:
+				case SHR_ASSIGN_OPR_T:
+				case SHL_ASSIGN_OPR_T:
+					exit_error("trying to assign to a constant");
+					break;
+			}
+		}
+
 		dstr_append(&buff, ", ");
 		if(!(r_type[rt_counter] = expr_gen(&buff, expr_bp_of(o_tag2)))) {
 			return false;	
@@ -304,7 +329,7 @@ char expr_gen(dstr_t* w_area, int rbp) {
 
 /* return false if not matches the grammar of variable declaration.
  * Otherwise, returns true */
-bool vardecl_gen(dstr_t* w_area, ht* var_ht) {
+bool vardecl_gen(dstr_t* w_area) {
 	if (lex_peek_token().tag2 != DECL_T) {
 		return false;
 	}
@@ -324,15 +349,8 @@ bool vardecl_gen(dstr_t* w_area, ht* var_ht) {
 	name = name_tkn.value;
 	/* don't jump to the next token because we're going to parse this with expr_gen() */
 
-	/* check if the item exist on var_ht if we're on a function */
-	if (!is_global_scope) {
-		if (ht_get(var_ht, name) != NULL) {
-			char msg[17+MAX_TOKEN_VALUE];
-			sprintf(msg, "redeclaration of variable %s", lex_peek_token().value);
-			exit_error(msg);
-		}
-	}
-	if (ht_get(global_var_ht, name) != NULL) {
+	/* check if the item exist on var_ht */
+	if (ht_get(var_ht, name) != NULL) {
 		char msg[17+MAX_TOKEN_VALUE];
 		sprintf(msg, "redeclaration of global variable %s", lex_peek_token().value);
 		exit_error(msg);
@@ -341,6 +359,7 @@ bool vardecl_gen(dstr_t* w_area, ht* var_ht) {
 	/* if it doesn't exist, insert to the var_ht */
 	var_data_t* var_val;
 	var_val = malloc(sizeof(var_data_t));
+	var_val->is_const = false;
 
 	ht_set(var_ht, name, var_val);
 
@@ -349,6 +368,7 @@ bool vardecl_gen(dstr_t* w_area, ht* var_ht) {
 	dstr_append(w_area, name);
 	
 	if(lex_jump_peek_token().tag2 != ASSIGNMENT_OPR_T) {
+		var_val->is_const = is_const;
 		lex_next_token();
 		return true;
 	}
@@ -368,26 +388,22 @@ bool vardecl_gen(dstr_t* w_area, ht* var_ht) {
 /* main entry, return a char pointer to the generated C code
  * (!) NOTE: return value must be freed after use */
 char* generate_code() {
-	is_global_scope = true;
-
 	dstr_t w_area;
 	dstr_init(&w_area);
 
-	if((global_var_ht = ht_create()) == NULL) {
+	if((var_ht = ht_create()) == NULL) {
 		printf("FATAL ERROR: failed to initialize ht");
 		exit(1);
 	}
 
 	do {
 		/* try to match all the grammar */
-		if (!vardecl_gen(&w_area, global_var_ht) &&
+		if (!vardecl_gen(&w_area) &&
 		    !expr_gen(&w_area, 0)) { 
 			char msg[18+MAX_TOKEN_VALUE];
 			sprintf(msg, "unexpected token: %s", lex_peek_token().value);
 			exit_error(msg);
 		}
-		
-		is_global_scope = true;	
 		
 		if (lex_peek_token().tag == SEMICOLON_T) {
 			lex_next_token();
@@ -395,7 +411,7 @@ char* generate_code() {
 		dstr_append(&w_area, ";\n");
 	} while(lex_peek_token().tag != EOF_T);
 
-	ht_destroy(global_var_ht);
+	ht_destroy(var_ht);
 
 	return w_area.str;
 }
