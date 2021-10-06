@@ -295,8 +295,14 @@ char expr_gen(dstr_t* w_area, int rbp) {
 		}
 
 		dstr_append(&buff, ", ");
-		if(!(r_type[rt_counter] = expr_gen(&buff, expr_bp_of(o_tag2)))) {
-			return false;	
+		if (!expr_is_r_assoc(o_tag2)) {
+			if(!(r_type[rt_counter] = expr_gen(&buff, expr_bp_of(o_tag2)))) {
+				return false;	
+			}
+		} else {
+			if(!(r_type[rt_counter] = expr_gen(&buff, expr_bp_of(o_tag2)-1))) {
+				return false;	
+			}
 		}
 		rt_counter++;
 	
