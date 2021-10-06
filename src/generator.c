@@ -281,6 +281,12 @@ char expr_gen(dstr_t* w_area, int rbp) {
 				case ASSIGNMENT_OPR_T:
 				case INC_OPR_T:
 				case DEC_OPR_T:
+				case MUL_ASSIGN_OPR_T:
+				case DIV_ASSIGN_OPR_T:
+				case MOD_ASSIGN_OPR_T:
+				case AND_ASSIGN_OPR_T:
+				case OR_ASSIGN_OPR_T:
+				case XOR_ASSIGN_OPR_T:
 				case SHR_ASSIGN_OPR_T:
 				case SHL_ASSIGN_OPR_T:
 					exit_error("trying to assign to a constant");

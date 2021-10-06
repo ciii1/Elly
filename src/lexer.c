@@ -205,7 +205,7 @@ token_t lex_next_token() {
 		ch = NEXT();
 		if (is_operator(ch)) {
 			if (ch == '=') {  /* allow = after all operator */
-				switch (ch) { /* generate tag2 */
+				switch (head_operator) { /* generate tag2 */
 					case '+':
 						tag2 = INC_OPR_T;
 						break;
