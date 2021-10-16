@@ -285,16 +285,16 @@ token_t lex_next_token() {
 				tag2 = RIGHT_PAREN_T;
 				break;
 			case '{':
-				tag2 = LEFT_SEMICOLON_T;
+				tag2 = LEFT_CURLY_BRACKET_T;
 				break;
 			case '}':
-				tag2 = RIGHT_SEMICOLON_T;
+				tag2 = RIGHT_CURLY_BRACKET_T;
 				break;
 			case '[':
-				tag2 = LEFT_BLOCK_T;
+				tag2 = LEFT_BRACKET_T;
 				break;
 			case ']':
-				tag2 = RIGHT_BLOCK_T;
+				tag2 = RIGHT_BRACKET_T;
 				break;
 			case ',':
 				tag2 = COMMA_T;	
