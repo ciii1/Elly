@@ -115,88 +115,88 @@ bool expr_is_r_assoc(tag_t tag2) {
 char* expr_get_operator(tag_t tag2) {
 	switch (tag2) {
 		case ADD_OPR_T:
-			return "__add__";
+			return TOSTRING(ADD_OPR_T_FUNC);
 			break;
 		case SUB_OPR_T:
-			return "__sub__";
+			return TOSTRING(SUB_OPR_T_FUNC);
 			break;
 		case MUL_OPR_T:
-			return "__mul__";
+			return TOSTRING(MUL_OPR_T_FUNC);
 			break;
 		case DIV_OPR_T:
-			return "__div__";
+			return TOSTRING(DIV_OPR_T_FUNC);
 			break;
 		case MOD_OPR_T:
-			return "__mod__";
+			return TOSTRING(MOD_OPR_T_FUNC);
 			break;
 		case AND_OPR_T:
-			return "__and__";
+			return TOSTRING(AND_OPR_T_FUNC);
 			break;
 		case OR_OPR_T:
-			return "__ror__";
+			return TOSTRING(OR_OPR_T_FUNC);
 			break;
 		case XOR_OPR_T:
-			return "__xor__";
+			return TOSTRING(XOR_OPR_T_FUNC);
 			break;
 		case CGREATER_OPR_T:
-			return "__cgr__";
+			return TOSTRING(CGREATER_OPR_T_FUNC);
 			break;
 		case CLESS_OPR_T:
-			return "__cls__";
+			return TOSTRING(CLESS_OPR_T_FUNC);
 			break;
 		case ASSIGNMENT_OPR_T:
-			return "__mov__";
+			return TOSTRING(ASSIGNMENT_OPR_T_FUNC);
 			break;
 		case INC_OPR_T:
-			return "__inc__";
+			return TOSTRING(INC_OPR_T_FUNC);
 			break;
 		case DEC_OPR_T:
-			return "__dec__";
+			return TOSTRING(DEC_OPR_T_FUNC);
 			break;
 		case MUL_ASSIGN_OPR_T:
-			return "__mulm_";
+			return TOSTRING(MUL_ASSIGN_OPR_T_FUNC);
 			break;
 		case DIV_ASSIGN_OPR_T:
-			return "__divm_";
+			return TOSTRING(DIV_ASSIGN_OPR_T_FUNC);
 			break;
 		case MOD_ASSIGN_OPR_T:
-			return "__modm_";
+			return TOSTRING(MOD_ASSIGN_OPR_T_FUNC);
 			break;
 		case AND_ASSIGN_OPR_T:
-			return "__andm_";
+			return TOSTRING(AND_ASSIGN_OPR_T_FUNC);
 			break;
 		case OR_ASSIGN_OPR_T:
-			return "__rorm_";
+			return TOSTRING(OR_ASSIGN_OPR_T_FUNC);
 			break;
 		case XOR_ASSIGN_OPR_T:
-			return "__xorm_";
+			return TOSTRING(XOR_ASSIGN_OPR_T_FUNC);
 			break;
 		case CGREATER_EQU_OPR_T:
-			return "__cge__";
+			return TOSTRING(CGREATER_EQU_OPR_T_FUNC);
 			break;
 		case CLESS_EQU_OPR_T:
-			return "__cle__";
+			return TOSTRING(CLESS_EQU_OPR_T_FUNC);
 			break;
 		case CEQU_OPR_T:
-			return "__equ__";
+			return TOSTRING(CEQU_OPR_T_FUNC);
 			break;
 		case LAND_OPR_T:
-			return "__land_";
+			return TOSTRING(LAND_OPR_T_FUNC);
 			break;
 		case LOR_OPR_T:
-			return "__lor__";
+			return TOSTRING(LOR_OPR_T_FUNC);
 			break;
 		case SHR_OPR_T:
-			return "__shr__";
+			return TOSTRING(SHR_OPR_T_FUNC);
 			break;
 		case SHL_OPR_T:
-			return "__shl__";
+			return TOSTRING(SHL_OPR_T_FUNC);
 			break;
 		case SHR_ASSIGN_OPR_T:
-			return "__shrm_";
+			return TOSTRING(SHR_ASSIGN_OPR_T_FUNC);
 			break;
 		case SHL_ASSIGN_OPR_T:
-			return "__shlm__";
+			return TOSTRING(SHL_ASSIGN_OPR_T_FUNC);
 			break;
 		default:
 			return NULL;
@@ -332,6 +332,7 @@ char expr_gen(dstr_t* w_area, int rbp) {
 		
 		printf("", o_tag2); /* Without this, somehow it produces weird error */
 	}
+
 	dstr_append_char(&buff, '\0');
 
 	/* insert l_parens in reverse order */
@@ -370,7 +371,7 @@ bool vardecl_gen(dstr_t* w_area) {
 
 	/* parse the code */
 	if (lex_next_token().tag == CONST_T) {
-		is_const = true;
+		is_const = true;	
 	}
 
 	token_t name_tkn = lex_peek_token();
@@ -390,6 +391,7 @@ bool vardecl_gen(dstr_t* w_area) {
 	/* if it doesn't exist, insert to the var_ht */
 	var_data_t* var_val;
 	var_val = malloc(sizeof(var_data_t));
+	/* set to false because we will initialise it */
 	var_val->is_const = false;
 
 	ht_set(var_ht[scope], name, var_val);
@@ -398,9 +400,10 @@ bool vardecl_gen(dstr_t* w_area) {
 	dstr_append(w_area, TOSTRING(E_VARIABLE_STRUCT) " ");
 	dstr_append(w_area, name);
 	
+	/* if there's no init */
 	if(lex_jump_peek_token().tag2 != ASSIGNMENT_OPR_T) {
 		dstr_append(w_area, ";\n");
-		dstr_append(w_area, "__nullify__(");
+		dstr_append(w_area, TOSTRING(NULLIFY_FUNC) "(");
 		dstr_append(w_area, name);
 		dstr_append(w_area, ")");
 		var_val->is_const = is_const;
@@ -415,7 +418,9 @@ bool vardecl_gen(dstr_t* w_area) {
 		return false;
 	}
 
+	/* actually assign the is_const to the var_val */
 	var_val->is_const = is_const;
+
 	return true;
 }
 
@@ -431,7 +436,6 @@ bool while_gen(dstr_t* w_area) {
 
 	/* generate the while expression */
 	if(!expr_gen(w_area, 0)) {
-		printf("aaa\n");
 		return false;
 	}
 
@@ -474,6 +478,146 @@ bool while_gen(dstr_t* w_area) {
 	return true;
 }
 
+/* return false if not matches the grammar of if, elif, and else expression.
+ * Otherwise, returns true */
+bool if_gen(dstr_t* w_area) {
+	if (lex_peek_token().tag != IF_T) {
+		return false;
+	}
+	lex_next_token();
+
+	dstr_append(w_area, TOSTRING(IF_KEYWORD) "(" TOSTRING(E_IS_TRUE) "(");
+
+	/* generate the if expression */
+	if(!expr_gen(w_area, 0)) {
+		return false;
+	}
+
+	dstr_append(w_area, "))");
+
+	/* look for '{'*/
+	if (lex_peek_token().tag2 != LEFT_CURLY_BRACKET_T) {
+		return false;
+	}
+	lex_next_token();
+
+	dstr_append(w_area, "{\n");
+	
+	/* create a new variable scope */
+	scope++;
+	if((var_ht[scope] = ht_create()) == NULL) {
+		printf("FATAL ERROR: failed to initialize ht");
+		exit(1);
+	}
+
+	/* generate body */
+	do {
+		/* try to match all the grammar */
+		if (!match_grammar(w_area)) {
+			return false;
+		}
+		
+		if (lex_peek_token().tag == SEMICOLON_T) {
+			lex_next_token();
+		}
+		dstr_append(w_area, ";\n");
+	} while(lex_peek_token().tag2 != RIGHT_CURLY_BRACKET_T);
+	lex_next_token();
+
+	/* delete the previously created scope */
+	ht_destroy(var_ht[scope]);
+	scope--;
+
+	dstr_append(w_area, "}");
+
+	/* check if the next token is elif or else */
+	while (lex_peek_token().tag == ELIF_T) {
+		lex_next_token();
+
+		dstr_append(w_area, TOSTRING(ELIF_KEYWORD) "(" TOSTRING(E_IS_TRUE) "(");
+
+		/* generate the if expression */
+		if(!expr_gen(w_area, 0)) {
+			return false;
+		}
+
+		dstr_append(w_area, ")){\n");
+
+		/* look for '{'*/
+		if (lex_peek_token().tag2 != LEFT_CURLY_BRACKET_T) {
+			return false;
+		}
+		lex_next_token();
+		
+		/* create a new variable scope */
+		scope++;
+		if((var_ht[scope] = ht_create()) == NULL) {
+			printf("FATAL ERROR: failed to initialize ht");
+			exit(1);
+		}
+
+		/* generate body */
+		do {
+			/* try to match all the grammar */
+			if (!match_grammar(w_area)) {
+				return false;
+			}
+			
+			if (lex_peek_token().tag == SEMICOLON_T) {
+				lex_next_token();
+			}
+			dstr_append(w_area, ";\n");
+		} while(lex_peek_token().tag2 != RIGHT_CURLY_BRACKET_T);
+		lex_next_token();
+
+		/* delete the previously created scope */
+		ht_destroy(var_ht[scope]);
+		scope--;
+		dstr_append(w_area, "}");
+	}
+
+	if (lex_peek_token().tag == ELSE_T) {
+		lex_next_token();
+
+		/* look for '{'*/
+		if (lex_peek_token().tag2 != LEFT_CURLY_BRACKET_T) {
+			return false;
+		}
+		lex_next_token();
+
+		dstr_append(w_area, TOSTRING(ELSE_KEYWORD) "{\n");
+		
+		/* create a new variable scope */
+		scope++;
+		if((var_ht[scope] = ht_create()) == NULL) {
+			printf("FATAL ERROR: failed to initialize ht");
+			exit(1);
+		}
+
+		/* generate body */
+		do {
+			/* try to match all the grammar */
+			if (!match_grammar(w_area)) {
+				return false;
+			}
+			
+			if (lex_peek_token().tag == SEMICOLON_T) {
+				lex_next_token();
+			}
+			dstr_append(w_area, ";\n");
+		} while(lex_peek_token().tag2 != RIGHT_CURLY_BRACKET_T);
+		lex_next_token();
+
+		/* delete the previously created scope */
+		ht_destroy(var_ht[scope]);
+		scope--;
+		
+		dstr_append(w_area, "}");
+	}
+	
+	return true;
+}
+
 /* main entry, return a char pointer to the generated C code
  * (!) NOTE: return value must be freed after use */
 char* generate_code() {
@@ -508,7 +652,8 @@ bool match_grammar(dstr_t* w_area) {
 	if (
 	    !expr_gen(w_area, 0) &&
 	    !vardecl_gen(w_area) &&
-	    !while_gen(w_area)
+	    !while_gen(w_area)   &&
+	    !if_gen(w_area)
 	    ) {
 		return false;
 	}

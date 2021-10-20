@@ -63,7 +63,41 @@ enum tags2{
 };
 
 #define E_VARIABLE_STRUCT var_t
-#define E_IS_TRUE __istrue__
+#define E_IS_TRUE __int__
+
+#define ADD_OPR_T_FUNC __add__
+#define SUB_OPR_T_FUNC __sub__
+#define MUL_OPR_T_FUNC __mul__
+#define DIV_OPR_T_FUNC __div__
+#define MOD_OPR_T_FUNC __mod__
+#define AND_OPR_T_FUNC __and__
+#define OR_OPR_T_FUNC __or__
+#define XOR_OPR_T_FUNC __xor__
+#define CGREATER_OPR_T_FUNC __isgreater__
+#define CLESS_OPR_T_FUNC __isless__
+#define ASSIGNMENT_OPR_T_FUNC __assign__
+#define INC_OPR_T_FUNC __inc__
+#define DEC_OPR_T_FUNC __dec__
+#define MUL_ASSIGN_OPR_T_FUNC __mulassign__
+#define DIV_ASSIGN_OPR_T_FUNC __divassign__
+#define MOD_ASSIGN_OPR_T_FUNC __modassign__
+#define AND_ASSIGN_OPR_T_FUNC __andassign__
+#define OR_ASSIGN_OPR_T_FUNC __orassign__
+#define XOR_ASSIGN_OPR_T_FUNC __xorassign__
+#define CGREATER_EQU_OPR_T_FUNC __isgreaterequ__
+#define CLESS_EQU_OPR_T_FUNC __islessequ__
+#define CEQU_OPR_T_FUNC __isequ__
+#define LAND_OPR_T_FUNC __logicand__
+#define LOR_OPR_T_FUNC __logicor__
+#define SHR_OPR_T_FUNC __shr__
+#define SHL_OPR_T_FUNC __shl__
+#define SHR_ASSIGN_OPR_T_FUNC __shrassign__
+#define SHL_ASSIGN_OPR_T_FUNC __shlassign__
+#define NULLIFY_FUNC __nullify__
+
+#define IF_KEYWORD if
+#define ELIF_KEYWORD else if
+#define ELSE_KEYWORD else
 #define WHILE_KEYWORD while
 
 #define STRINGIFY(x) #x
