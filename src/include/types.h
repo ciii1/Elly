@@ -11,8 +11,15 @@ typedef struct {
 typedef struct {
 	char* str;
 	char* end;
+	char* alloc_end;
 } dstr_t;
 
 typedef struct {
 	bool is_const;
 } var_data_t;
+
+typedef struct {
+	int param_max;
+	int param_min;
+	dstr_t default_param[FN_PARAMS_MAX]; /* an array contains the generated code of default params, eg. if the input is a = 10+20, will contains add(10,20). */
+} func_data_t;

@@ -18,7 +18,10 @@
 ht* var_ht[VAR_HT_STACK_INIT_SIZE];
 int scope = 0;
 
-bool match_grammar(dstr_t* w_area);
+ht* func_ht;
+
+bool match_global_grammar(dstr_t* w_area);
+bool match_local_grammar(dstr_t* w_area);
 
 /* return var_data from 'val' on every stack of var_ht if the key is exist.
  * Otherwise, return false */
@@ -353,6 +356,7 @@ char expr_gen(dstr_t* w_area, int rbp) {
 
 	/* insert the buffer */
 	dstr_append(w_area, buff.str);
+	
 
 	dstr_free(&buff);
 
@@ -366,9 +370,7 @@ bool vardecl_gen(dstr_t* w_area) {
 		return false;
 	}
 
-	char* name;
 	bool is_const = false;
-
 	/* parse the code */
 	if (lex_next_token().tag == CONST_T) {
 		is_const = true;	
@@ -378,11 +380,10 @@ bool vardecl_gen(dstr_t* w_area) {
 	if (name_tkn.tag != VARIABLE_T) {
 		return false;
 	}
-	name = name_tkn.value;
 	/* don't jump to the next token because we're going to parse this with expr_gen() */
 
 	/* check if the item exists on var_ht */
-	if (get_var(name) != NULL) {
+	if (get_var(name_tkn.value) != NULL) {
 		char msg[17+MAX_TOKEN_VALUE];
 		sprintf(msg, "redeclaration of variable %s", lex_peek_token().value);
 		exit_error(msg);
@@ -394,17 +395,17 @@ bool vardecl_gen(dstr_t* w_area) {
 	/* set to false because we will initialise it */
 	var_val->is_const = false;
 
-	ht_set(var_ht[scope], name, var_val);
+	ht_set(var_ht[scope], name_tkn.value, var_val);
 
 	/* generate the code based from the parsed data */
 	dstr_append(w_area, TOSTRING(E_VARIABLE_STRUCT) " ");
-	dstr_append(w_area, name);
+	dstr_append(w_area, name_tkn.value);
 	
 	/* if there's no init */
 	if(lex_jump_peek_token().tag2 != ASSIGNMENT_OPR_T) {
 		dstr_append(w_area, ";\n");
 		dstr_append(w_area, TOSTRING(NULLIFY_FUNC) "(");
-		dstr_append(w_area, name);
+		dstr_append(w_area, name_tkn.value);
 		dstr_append(w_area, ")");
 		var_val->is_const = is_const;
 		lex_next_token();
@@ -458,7 +459,7 @@ bool while_gen(dstr_t* w_area) {
 
 	do {
 		/* try to match all the grammar */
-		if (!match_grammar(w_area)) {
+		if (!match_local_grammar(w_area)) {
 			return false;
 		}
 		
@@ -513,7 +514,7 @@ bool if_gen(dstr_t* w_area) {
 	/* generate body */
 	do {
 		/* try to match all the grammar */
-		if (!match_grammar(w_area)) {
+		if (!match_local_grammar(w_area)) {
 			return false;
 		}
 		
@@ -559,7 +560,7 @@ bool if_gen(dstr_t* w_area) {
 		/* generate body */
 		do {
 			/* try to match all the grammar */
-			if (!match_grammar(w_area)) {
+			if (!match_local_grammar(w_area)) {
 				return false;
 			}
 			
@@ -597,7 +598,7 @@ bool if_gen(dstr_t* w_area) {
 		/* generate body */
 		do {
 			/* try to match all the grammar */
-			if (!match_grammar(w_area)) {
+			if (!match_local_grammar(w_area)) {
 				return false;
 			}
 			
@@ -618,11 +619,165 @@ bool if_gen(dstr_t* w_area) {
 	return true;
 }
 
+/* return false if not matches the grammar of function declaration.
+ * Otherwise, returns true */
+bool funcdecl_gen(dstr_t* w_area) {
+	if (lex_peek_token().tag != FN_T) {
+		return false;
+	}
+	lex_next_token();
+
+	/* parse the name */
+	token_t name_tkn = lex_peek_token();
+	if (name_tkn.tag != VARIABLE_T) {
+		return false;
+	}
+	lex_next_token();
+
+	dstr_append(w_area, TOSTRING(E_VARIABLE_STRUCT) " ");
+	dstr_append(w_area, name_tkn.value);	
+
+	if (lex_peek_token().tag2 != LEFT_PAREN_T) {
+		return false;
+	}
+
+	dstr_append_char(w_area, '(');
+	
+	/* create a new variable scope, for the params and local variables */
+	scope++;
+	if((var_ht[scope] = ht_create()) == NULL) {
+		printf("FATAL ERROR: failed to initialize ht");
+		exit(1);
+	}
+
+	func_data_t* func_data;
+	func_data = malloc(sizeof(func_data_t));
+	func_data->param_min = 0;
+	func_data->param_max = 0;
+	
+	int default_param_counter = 0;
+
+	/* parse the parameters */
+	while (lex_peek_token().tag2 != RIGHT_PAREN_T) {
+		lex_next_token();
+
+		if (lex_peek_token().tag2 != DECL_T) {
+			return false;
+		}
+	
+		bool is_const = false;
+		/* parse the code */
+		if (lex_next_token().tag == CONST_T) {
+			is_const = true;	
+		}
+	
+		token_t name_tkn = lex_peek_token();
+		if (name_tkn.tag != VARIABLE_T) {
+			return false;
+		}
+		/* don't jump to the next token because we're going to parse this with expr_gen() */
+	
+		/* check if the item exists on var_ht */
+		if (get_var(name_tkn.value) != NULL) {
+			char msg[17+MAX_TOKEN_VALUE];
+			sprintf(msg, "redeclaration of variable %s", lex_peek_token().value);
+			exit_error(msg);
+		}
+		
+		/* if it doesn't exist, insert to the var_ht */
+		var_data_t* var_val;
+		var_val = malloc(sizeof(var_data_t));
+		/* set to false because we will initialise it */
+		var_val->is_const = false;
+	
+		ht_set(var_ht[scope], name_tkn.value, var_val);
+	
+		/* generate the code based from the parsed data */
+		dstr_append(w_area, TOSTRING(E_VARIABLE_STRUCT) " ");
+		dstr_append(w_area, name_tkn.value);
+		
+		/* if there's no init */
+		if(lex_jump_peek_token().tag2 != ASSIGNMENT_OPR_T) {
+			if (default_param_counter > 0) {
+				exit_error("parameter with no default value after a list of parameter with default value");
+			}
+			var_val->is_const = is_const;
+			lex_next_token();
+			func_data->param_min++;
+		} else {
+			lex_next_token();
+			lex_next_token();
+
+			/* create a new dstr for the expression */
+			dstr_init(&func_data->default_param[default_param_counter]);
+
+			/* generate the expression */
+			if(!expr_gen(&func_data->default_param[default_param_counter], 0)){
+				return false;
+			}
+
+			/* terminate it */
+			dstr_append_char(&func_data->default_param[default_param_counter], '\0');
+
+			/* actually assign the is_const to the var_val */
+			var_val->is_const = is_const;
+			
+			//printf("param_default: %s\n", func_data->default_param[param_counter].str);
+			default_param_counter++;
+		}
+		func_data->param_max++;
+
+		if (lex_peek_token().tag2 == COMMA_T) {
+			dstr_append_char(w_area, ',');
+			if (lex_jump_peek_token().tag2 == RIGHT_PAREN_T) {
+				return false;
+			}
+		}
+	}
+	
+	/* add the func_data to the func_ht */
+	ht_set(func_ht, name_tkn.value, func_data);
+
+	dstr_append(w_area, ") {\n");	
+
+	lex_next_token();
+	if (lex_peek_token().tag2 != LEFT_CURLY_BRACKET_T) {
+		return false;
+	}
+
+	lex_next_token();
+
+	/* parse body */
+
+	do {
+		/* try to match all the grammar */
+		if (!match_local_grammar(w_area)) {
+			return false;
+		}
+		
+		if (lex_peek_token().tag == SEMICOLON_T) {
+			lex_next_token();
+		}
+		dstr_append(w_area, ";\n");
+	} while(lex_peek_token().tag2 != RIGHT_CURLY_BRACKET_T);
+	lex_next_token();
+
+	/* delete the previously created scope */
+	ht_destroy(var_ht[scope]);
+	scope--;
+
+	dstr_append(w_area, "}");
+
+	return true;
+}
+
 /* main entry, return a char pointer to the generated C code
  * (!) NOTE: return value must be freed after use */
 char* generate_code() {
 	dstr_t w_area;
 	dstr_init(&w_area);
+
+	func_ht = ht_create();
 	
 	if((var_ht[scope] = ht_create()) == NULL) {
 		printf("FATAL ERROR: failed to initialize ht");
@@ -631,7 +786,7 @@ char* generate_code() {
 
 	do {
 		/* try to match all the grammar */
-		if (!match_grammar(&w_area)) {
+		if (!match_global_grammar(&w_area)) {
 			char msg[18+MAX_TOKEN_VALUE];
 			sprintf(msg, "unexpected token: %s", lex_peek_token().value);
 			exit_error(msg);
@@ -643,12 +798,33 @@ char* generate_code() {
 		dstr_append(&w_area, ";\n");
 	} while(lex_peek_token().tag != EOF_T);
 
+	dstr_append_char(&w_area, '\0');
+
+	func_data_t* test;
+	test = (func_data_t*)ht_get(func_ht, "hello");
+	printf("def_params: %s\n\n", test->default_param[1].str);
 	ht_destroy(var_ht[scope]);
+	ht_destroy(func_ht);
 
 	return w_area.str;
 }
 
-bool match_grammar(dstr_t* w_area) {
+/* match all the grammar in global scope */
+bool match_global_grammar(dstr_t* w_area) {
+	if (
+	    !expr_gen(w_area, 0) &&
+	    !vardecl_gen(w_area) &&
+	    !while_gen(w_area)   &&
+	    !if_gen(w_area)      &&
+	    !funcdecl_gen(w_area)
+	    ) {
+		return false;
+	}
+	return true;
+}
+
+/* match grammars in-function scope */
+bool match_local_grammar(dstr_t* w_area) {
 	if (
 	    !expr_gen(w_area, 0) &&
 	    !vardecl_gen(w_area) &&
