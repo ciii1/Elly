@@ -9,7 +9,7 @@ fn add(a, b) {
 }
 a = 1
 b = 2
-#print 1+2
+//print 1+2
 print('1+2=' + add(a,b))
 ```
 For more information, you can take a look at the documentation [TODO]
