@@ -9,8 +9,7 @@
 #include "include/compiler.h"
 #include "include/dstr.h"
 
-/* the following function returns true if the argument 'ch' given is one of the first operator combination 
- * (if the operator is += then + is the first operator combination) and returns false otherwise */
+/* the following function returns true if the argument 'ch' given is one of the first operator combination * (if the operator is += then + is the first operator combination) and returns false otherwise */
 bool is_operator(char ch) {
 	if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || 
 	    ch == '=' || ch == '!' || ch == '>' || ch == '<' || 
@@ -95,13 +94,24 @@ char NEXT() {
 	return PEEK();
 }
 
+
+/* the following function creates a new token from the given arguments */
+token_t t_init_token(char *value, tag_t tag, tag_t tag2) {
+	token_t token; 
+	int i = 0;
+	strcpy(token.value, value);
+	token.tag = tag;
+	token.tag2 = tag2;
+	return token;
+}	
+
 /* generate current token and move fseek*/
 token_t lex_next_token() {
 	signed char ch = PEEK();
 	char str[32];
 	int str_counter = 0;
-	tag_t tag;
-	tag_t tag2;
+	tag_t tag = 0;
+	tag_t tag2 = 0;
 
 	/* skip whitespaces and comments*/
 	while (ch == '#') {
@@ -373,3 +383,4 @@ token_t lex_jump_peek_token() {
 
 	return token;
 }
+
