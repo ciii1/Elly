@@ -10,6 +10,7 @@
 #include "include/compiler.h"
 #include "include/lexer.h"
 #include "include/dstr.h"
+#include "include/utils.h"
 #include "ht/ht.h"
 
 #define OUTPUT_SIZE 16777216 /* 8^8 */

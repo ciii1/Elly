@@ -1,5 +1,3 @@
-extern void exit_error(char* msg);
-extern token_t t_init_token(char* value, tag_t tag, tag_t tag2);
 extern char* stracpy(char* source, char* dest);
 extern bool is_operator(char ch);
 extern bool is_identifier(char ch);

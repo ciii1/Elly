@@ -8,6 +8,7 @@
 #include "include/types.h"
 #include "include/compiler.h"
 #include "include/dstr.h"
+#include "include/utils.h"
 
 /* the following function returns true if the argument 'ch' given is one of the first operator combination * (if the operator is += then + is the first operator combination) and returns false otherwise */
 bool is_operator(char ch) {
@@ -96,7 +97,7 @@ char NEXT() {
 
 
 /* the following function creates a new token from the given arguments */
-token_t t_init_token(char *value, tag_t tag, tag_t tag2) {
+token_t lex_init_token(char *value, tag_t tag, tag_t tag2) {
 	token_t token; 
 	int i = 0;
 	strcpy(token.value, value);
@@ -339,7 +340,7 @@ token_t lex_next_token() {
 		ch = NEXT();
 	}
 
-	return t_init_token(str, tag, tag2);
+	return lex_init_token(str, tag, tag2);
 }	
 
 /* generate current token but don't move the fseek */
