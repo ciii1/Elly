@@ -9,7 +9,6 @@
 #include "include/types.h"
 #include "include/compiler.h"
 #include "include/lexer.h"
-#include "include/dstr.h"
 #include "include/utils.h"
 #include "ht/ht.h"
 
@@ -36,6 +35,15 @@ var_data_t* get_var(char* val) {
 	return NULL;
 }
 
+/* free var_ht items and key of the current scope */
+void var_destroy_scope() {
+	hti var_ht_iter;
+	var_ht_iter = ht_iterator(var_ht[scope]);
+	while (ht_next(&var_ht_iter)) {
+		free(var_ht_iter.value);
+	}
+	ht_destroy(var_ht[scope]);
+}
 /* return the binding power (precedence) of 'val' */
 short expr_bp_of(tag_t tag2) {
 	switch (tag2) {
@@ -260,14 +268,17 @@ char expr_gen(dstr_t* w_area, int rbp) {
 	if(l_tkn.tag2 == LEFT_PAREN_T) {
 		lex_next_token();
 		if(!(l_type = expr_gen(&buff, 0))) {
+			free(buff.str);
 			return false;
 		}
 		if(lex_peek_token().tag2 != RIGHT_PAREN_T) {
+			free(buff.str);
 			return false;
 		}
 		lex_next_token();
 	} else {
 	       	if (!(l_type = expr_gen_value(&buff))) {
+			free(buff.str);
 			return false;
 		}
 
@@ -275,6 +286,7 @@ char expr_gen(dstr_t* w_area, int rbp) {
 		 * (the expr_gen_value() wouldn't check if a name exists or not*/
 		if (l_type == 'v') {
 			if ((l_var_data = get_var(l_tkn.value)) == NULL) {
+				free(buff.str);
 				char msg[17+MAX_TOKEN_VALUE];
 				sprintf(msg, "undeclared name %s", l_tkn.value);
 				exit_error(msg);
@@ -288,9 +300,11 @@ char expr_gen(dstr_t* w_area, int rbp) {
 		if(lex_peek_token().tag2 == LEFT_PAREN_T) {
 			lex_next_token();
 			if(!expr_gen(&buff, 0)) {
+				free(buff.str);
 				return false;
 			}
 			if(lex_peek_token().tag2 != RIGHT_PAREN_T) {
+				free(buff.str);
 				return false;
 			}
 			lex_next_token();
@@ -312,6 +326,7 @@ char expr_gen(dstr_t* w_area, int rbp) {
 				case XOR_ASSIGN_OPR_T:
 				case SHR_ASSIGN_OPR_T:
 				case SHL_ASSIGN_OPR_T:
+					free(buff.str);
 					exit_error("trying to assign to a constant");
 					break;
 			}
@@ -320,10 +335,12 @@ char expr_gen(dstr_t* w_area, int rbp) {
 		dstr_append(&buff, ", ");
 		if (!expr_is_r_assoc(o_tag2)) {
 			if(!(r_type[rt_counter] = expr_gen(&buff, expr_bp_of(o_tag2)))) {
+				free(buff.str);
 				return false;	
 			}
 		} else {
 			if(!(r_type[rt_counter] = expr_gen(&buff, expr_bp_of(o_tag2)-1))) {
+				free(buff.str);
 				return false;	
 			}
 		}
@@ -358,8 +375,7 @@ char expr_gen(dstr_t* w_area, int rbp) {
 	/* insert the buffer */
 	dstr_append(w_area, buff.str);
 	
-
-	dstr_free(&buff);
+	free(buff.str);
 
 	return l_type;
 }
@@ -472,7 +488,7 @@ bool while_gen(dstr_t* w_area) {
 	lex_next_token();
 
 	/* delete the previously created scope */
-	ht_destroy(var_ht[scope]);
+	var_destroy_scope(var_ht[scope]);
 	scope--;
 
 	dstr_append(w_area, "}");
@@ -527,7 +543,7 @@ bool if_gen(dstr_t* w_area) {
 	lex_next_token();
 
 	/* delete the previously created scope */
-	ht_destroy(var_ht[scope]);
+	var_destroy_scope(var_ht[scope]);
 	scope--;
 
 	dstr_append(w_area, "}");
@@ -573,7 +589,7 @@ bool if_gen(dstr_t* w_area) {
 		lex_next_token();
 
 		/* delete the previously created scope */
-		ht_destroy(var_ht[scope]);
+		var_destroy_scope(var_ht[scope]);
 		scope--;
 		dstr_append(w_area, "}");
 	}
@@ -611,7 +627,7 @@ bool if_gen(dstr_t* w_area) {
 		lex_next_token();
 
 		/* delete the previously created scope */
-		ht_destroy(var_ht[scope]);
+		var_destroy_scope(var_ht[scope]);
 		scope--;
 		
 		dstr_append(w_area, "}");
@@ -764,7 +780,7 @@ bool funcdecl_gen(dstr_t* w_area) {
 	lex_next_token();
 
 	/* delete the previously created scope */
-	ht_destroy(var_ht[scope]);
+	var_destroy_scope(var_ht[scope]);
 	scope--;
 
 	dstr_append(w_area, "}");
@@ -801,10 +817,20 @@ char* generate_code() {
 
 	dstr_append_char(&w_area, '\0');
 
-	func_data_t* test;
-	test = (func_data_t*)ht_get(func_ht, "hello");
-	printf("def_params: %s\n\n", test->default_param[1].str);
-	ht_destroy(var_ht[scope]);
+	var_destroy_scope();
+
+	/* free all func_ht items */
+	hti func_ht_iter;
+	func_ht_iter = ht_iterator(func_ht);	
+	func_data_t* func_data;
+	while (ht_next(&func_ht_iter)) {
+		/* free the default params */
+		func_data = (func_data_t*)func_ht_iter.value;
+		for (int i = 0; i < (func_data->param_max - func_data->param_min); i++) {
+			free(func_data->default_param[i].str);
+		}
+		free(func_data);
+	}
 	ht_destroy(func_ht);
 
 	return w_area.str;

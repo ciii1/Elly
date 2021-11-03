@@ -1,4 +1,8 @@
+#ifndef TYPES_H_
+#define TYPES_H_
+
 #include <stdbool.h>
+#include "dstr.h"
 
 typedef short tag_t;
 
@@ -18,3 +22,5 @@ typedef struct {
 	int param_min;
 	dstr_t default_param[FN_PARAMS_MAX]; /* an array contains the generated code of default params, eg. if the input is a = 10+20, will contains add(10,20). */
 } func_data_t;
+
+#endif

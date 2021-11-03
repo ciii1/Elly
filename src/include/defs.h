@@ -1,3 +1,6 @@
+#ifndef DEFS_H_
+#define DEFS_H_
+
 /* TAG */
 enum tags{
  EOF_T,
@@ -107,3 +110,5 @@ enum tags2{
 #define MAX_TOKEN_VALUE 56
 #define INIT_DSTR_SPACE 56
 #define FN_PARAMS_MAX 100
+
+#endif
