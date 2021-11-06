@@ -115,15 +115,19 @@ token_t lex_next_token() {
 	tag_t tag2 = 0;
 
 	/* skip whitespaces and comments*/
-	while (ch == '/') {
-		ch = NEXT();
-		if (ch == '/') {
+	while (ch == '#' || ch == '/') {
+		if (ch == '#') {
 			while (ch != '\n') {
 				ch = NEXT();
 			}
-       			while (ch == ' ' || ch == '\t' || ch == '\n') {
+		} else if (ch == '/') {
+			do {
 				ch = NEXT();
-			}
+			} while (ch != '/' && ch != EOF);
+			ch = NEXT();
+		}
+       		while (ch == ' ' || ch == '\t' || ch == '\n') {
+			ch = NEXT();
 		}
 	} 
        	while (ch == ' ' || ch == '\t' || ch == '\n') {
@@ -331,15 +335,19 @@ token_t lex_next_token() {
 	str[str_counter] = '\0';
 
 	/* skip whitespaces and comments*/
-	while (ch == '/') {
-		ch = NEXT();
-		if (ch == '/') {
+	while (ch == '#' || ch == '/') {
+		if (ch == '#') {
 			while (ch != '\n') {
 				ch = NEXT();
 			}
-       			while (ch == ' ' || ch == '\t' || ch == '\n') {
+		} else if (ch == '/') {
+			ch = NEXT();
+			while (ch != '/') {
 				ch = NEXT();
 			}
+		}
+       		while (ch == ' ' || ch == '\t' || ch == '\n') {
+			ch = NEXT();
 		}
 	} 
        	while (ch == ' ' || ch == '\t' || ch == '\n') {
