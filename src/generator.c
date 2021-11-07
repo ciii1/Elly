@@ -20,7 +20,7 @@ int scope = 0;
 
 ht* func_ht;
 
-bool match_global_grammar(dstr_t* w_area);
+bool match_global_grammar(dstr_t* w_area_main, dstr_t* w_area_glob);
 bool match_local_grammar(dstr_t* w_area);
 
 /* return var_data from 'val' on every stack of var_ht if the key is exist.
@@ -415,7 +415,7 @@ bool vardecl_gen(dstr_t* w_area) {
 	ht_set(var_ht[scope], name_tkn.value, var_val);
 
 	/* generate the code based from the parsed data */
-	dstr_append(w_area, TOSTRING(E_VARIABLE_STRUCT) " ");
+	dstr_append(w_area, TOSTRING(VARIABLE_STRUCT) " ");
 	dstr_append(w_area, name_tkn.value);
 	
 	/* if there's no init */
@@ -450,7 +450,7 @@ bool while_gen(dstr_t* w_area) {
 	}
 	lex_next_token();
 
-	dstr_append(w_area, TOSTRING(WHILE_KEYWORD) "(" TOSTRING(E_IS_TRUE) "(");
+	dstr_append(w_area, TOSTRING(WHILE_KEYWORD) "(" TOSTRING(IS_TRUE_FUNC) "(");
 
 	/* generate the while expression */
 	if(!expr_gen(w_area, 0)) {
@@ -480,10 +480,6 @@ bool while_gen(dstr_t* w_area) {
 			return false;
 		}
 		
-		if (lex_peek_token().tag == SEMICOLON_T) {
-			lex_next_token();
-		}
-		dstr_append(w_area, ";\n");
 	} while(lex_peek_token().tag2 != RIGHT_CURLY_BRACKET_T);
 	lex_next_token();
 
@@ -504,7 +500,7 @@ bool if_gen(dstr_t* w_area) {
 	}
 	lex_next_token();
 
-	dstr_append(w_area, TOSTRING(IF_KEYWORD) "(" TOSTRING(E_IS_TRUE) "(");
+	dstr_append(w_area, TOSTRING(IF_KEYWORD) "(" TOSTRING(IS_TRUE_FUNC) "(");
 
 	/* generate the if expression */
 	if(!expr_gen(w_area, 0)) {
@@ -534,11 +530,6 @@ bool if_gen(dstr_t* w_area) {
 		if (!match_local_grammar(w_area)) {
 			return false;
 		}
-		
-		if (lex_peek_token().tag == SEMICOLON_T) {
-			lex_next_token();
-		}
-		dstr_append(w_area, ";\n");
 	} while(lex_peek_token().tag2 != RIGHT_CURLY_BRACKET_T);
 	lex_next_token();
 
@@ -552,7 +543,7 @@ bool if_gen(dstr_t* w_area) {
 	while (lex_peek_token().tag == ELIF_T) {
 		lex_next_token();
 
-		dstr_append(w_area, TOSTRING(ELIF_KEYWORD) "(" TOSTRING(E_IS_TRUE) "(");
+		dstr_append(w_area, TOSTRING(ELIF_KEYWORD) "(" TOSTRING(IS_TRUE_FUNC) "(");
 
 		/* generate the if expression */
 		if(!expr_gen(w_area, 0)) {
@@ -580,11 +571,6 @@ bool if_gen(dstr_t* w_area) {
 			if (!match_local_grammar(w_area)) {
 				return false;
 			}
-			
-			if (lex_peek_token().tag == SEMICOLON_T) {
-				lex_next_token();
-			}
-			dstr_append(w_area, ";\n");
 		} while(lex_peek_token().tag2 != RIGHT_CURLY_BRACKET_T);
 		lex_next_token();
 
@@ -618,11 +604,6 @@ bool if_gen(dstr_t* w_area) {
 			if (!match_local_grammar(w_area)) {
 				return false;
 			}
-			
-			if (lex_peek_token().tag == SEMICOLON_T) {
-				lex_next_token();
-			}
-			dstr_append(w_area, ";\n");
 		} while(lex_peek_token().tag2 != RIGHT_CURLY_BRACKET_T);
 		lex_next_token();
 
@@ -644,14 +625,21 @@ bool funcdecl_gen(dstr_t* w_area) {
 	}
 	lex_next_token();
 
+	func_data_t* func_data; /* to be appended to func_ht */
+	func_data = malloc(sizeof(func_data_t));
+	func_data->param_min = 0;
+	func_data->param_max = 0;
+
 	/* parse the name */
 	token_t name_tkn = lex_peek_token();
 	if (name_tkn.tag != VARIABLE_T) {
 		return false;
 	}
+	strcpy(func_data->name, name_tkn.value);
+
 	lex_next_token();
 
-	dstr_append(w_area, TOSTRING(E_VARIABLE_STRUCT) " ");
+	dstr_append(w_area, TOSTRING(VARIABLE_STRUCT) " ");
 	dstr_append(w_area, name_tkn.value);	
 
 	if (lex_peek_token().tag2 != LEFT_PAREN_T) {
@@ -667,10 +655,6 @@ bool funcdecl_gen(dstr_t* w_area) {
 		exit(1);
 	}
 
-	func_data_t* func_data;
-	func_data = malloc(sizeof(func_data_t));
-	func_data->param_min = 0;
-	func_data->param_max = 0;
 	
 	int default_param_counter = 0;
 
@@ -710,7 +694,7 @@ bool funcdecl_gen(dstr_t* w_area) {
 		ht_set(var_ht[scope], name_tkn.value, var_val);
 	
 		/* generate the code based from the parsed data */
-		dstr_append(w_area, TOSTRING(E_VARIABLE_STRUCT) " ");
+		dstr_append(w_area, TOSTRING(VARIABLE_STRUCT) " ");
 		dstr_append(w_area, name_tkn.value);
 		
 		/* if there's no init */
@@ -771,11 +755,6 @@ bool funcdecl_gen(dstr_t* w_area) {
 		if (!match_local_grammar(w_area)) {
 			return false;
 		}
-		
-		if (lex_peek_token().tag == SEMICOLON_T) {
-			lex_next_token();
-		}
-		dstr_append(w_area, ";\n");
 	} while(lex_peek_token().tag2 != RIGHT_CURLY_BRACKET_T);
 	lex_next_token();
 
@@ -791,6 +770,13 @@ bool funcdecl_gen(dstr_t* w_area) {
 /* main entry, return a char pointer to the generated C code
  * (!) NOTE: return value must be freed after use */
 char* generate_code() {
+	dstr_t w_area_main;
+	dstr_init(&w_area_main);
+
+	dstr_t w_area_glob;
+	dstr_init(&w_area_glob);
+
+	/* final output area */
 	dstr_t w_area;
 	dstr_init(&w_area);
 
@@ -803,54 +789,91 @@ char* generate_code() {
 
 	do {
 		/* try to match all the grammar */
-		if (!match_global_grammar(&w_area)) {
+		if (!match_global_grammar(&w_area_main, &w_area_glob)) {
 			char msg[18+MAX_TOKEN_VALUE];
 			sprintf(msg, "unexpected token: %s", lex_peek_token().value);
 			exit_error(msg);
 		}
-
-		if (lex_peek_token().tag == SEMICOLON_T) {
-			lex_next_token();
-		}
-		dstr_append(&w_area, ";\n");
 	} while(lex_peek_token().tag != EOF_T);
 
-	dstr_append_char(&w_area, '\0');
+	dstr_append_char(&w_area_main, '\0');
+	dstr_append_char(&w_area_glob, '\0');
 
+	/* destroy the global variable scope */
 	var_destroy_scope();
 
-	/* free all func_ht items */
+	/* generate the header of each func_ht items to w_area_glob
+	 * and free each of it by iteration */
 	hti func_ht_iter;
 	func_ht_iter = ht_iterator(func_ht);	
 	func_data_t* func_data;
 	while (ht_next(&func_ht_iter)) {
-		/* free the default params */
 		func_data = (func_data_t*)func_ht_iter.value;
+
+		/* generate header */
+		dstr_append(&w_area, TOSTRING(VARIABLE_STRUCT) " ");
+		dstr_append(&w_area, func_data->name);
+
+		/* generate the header params */
+		dstr_append_char(&w_area, '(');
+		for (int i = 0; i < func_data->param_max; i++) {
+			dstr_append(&w_area, TOSTRING(VARIABLE_STRUCT) " param");
+			char i_str[3];
+			sprintf(i_str, "%i", i);
+			dstr_append(&w_area, i_str);
+			if (i+1 < func_data->param_max)
+				dstr_append_char(&w_area, ',');
+		}
+		dstr_append(&w_area, ");\n");
+
+		/* free the func data */
 		for (int i = 0; i < (func_data->param_max - func_data->param_min); i++) {
 			free(func_data->default_param[i].str);
 		}
 		free(func_data);
 	}
 	ht_destroy(func_ht);
+	
+	dstr_append_char(&w_area, '\n');
+	
+	/* append the generated output to w_area neatly */
+	dstr_append(&w_area, w_area_glob.str);
+	/* the main function header */
+	dstr_append(&w_area, "\n" TOSTRING(MAIN_FUNC_TYPE) " " TOSTRING(MAIN_FUNC_NAME) TOSTRING(MAIN_FUNC_PARAMS) " {\n");
+	dstr_append(&w_area, TOSTRING(PROGRAM_INIT_FUNC) TOSTRING(PROGRAM_INIT_PARAMS) ";\n"); 
+	dstr_append(&w_area, w_area_main.str);
+	dstr_append(&w_area, "};\n");
+
+	dstr_append_char(&w_area, '\0');
+
+	free(w_area_main.str);
+	free(w_area_glob.str);
 
 	return w_area.str;
 }
 
 /* match all the grammar in global scope */
-bool match_global_grammar(dstr_t* w_area) {
+bool match_global_grammar(dstr_t* w_area_main, dstr_t* w_area_glob) {
 	if (
-	    !expr_gen(w_area, 0) &&
-	    !vardecl_gen(w_area) &&
-	    !while_gen(w_area)   &&
-	    !if_gen(w_area)      &&
-	    !funcdecl_gen(w_area)
-	    ) {
-		return false;
+	    !expr_gen(w_area_main, 0) &&
+	    !vardecl_gen(w_area_main) &&
+	    !while_gen(w_area_main)   &&
+	    !if_gen(w_area_main)) {
+	    	if (!funcdecl_gen(w_area_glob)) {
+			return false;
+	    	} else {
+			dstr_append(w_area_glob, ";\n");
+		}
+	} else {
+		dstr_append(w_area_main, ";\n");
+	}
+	if (lex_peek_token().tag == SEMICOLON_T) {
+		lex_next_token();
 	}
 	return true;
 }
 
-/* match grammars in-function scope */
+/* match grammars in-function scope and append ';' at the end of the generated code */
 bool match_local_grammar(dstr_t* w_area) {
 	if (
 	    !expr_gen(w_area, 0) &&
@@ -860,5 +883,9 @@ bool match_local_grammar(dstr_t* w_area) {
 	    ) {
 		return false;
 	}
+	if (lex_peek_token().tag == SEMICOLON_T) {
+		lex_next_token();
+	}
+	dstr_append(w_area, ";\n");
 	return true;
 }
