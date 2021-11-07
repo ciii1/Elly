@@ -18,6 +18,7 @@ typedef struct {
 } var_data_t;
 
 typedef struct {
+	char name[MAX_TOKEN_VALUE];
 	int param_max;
 	int param_min;
 	dstr_t default_param[FN_PARAMS_MAX]; /* an array contains the generated code of default params, eg. if the input is a = 10+20, will contains add(10,20). */
