@@ -1,6 +1,7 @@
 #ifndef DEFS_H_
 #define DEFS_H_
 
+
 /* TAG */
 enum tags{
  EOF_T,
@@ -65,9 +66,11 @@ enum tags2{
  DECL_T,
 };
 
-#define E_VARIABLE_STRUCT var_t
-#define E_IS_TRUE __int__
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
 
+#define VARIABLE_STRUCT var_t
+#define IS_TRUE_FUNC __istrue__
 #define ADD_OPR_T_FUNC __add__
 #define SUB_OPR_T_FUNC __sub__
 #define MUL_OPR_T_FUNC __mul__
@@ -103,8 +106,12 @@ enum tags2{
 #define ELSE_KEYWORD else
 #define WHILE_KEYWORD while
 
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
+#define MAIN_FUNC_TYPE int
+#define MAIN_FUNC_NAME main
+#define MAIN_FUNC_PARAMS (int argc, char* argv[])
+
+#define PROGRAM_INIT_FUNC __proginit__
+#define PROGRAM_INIT_PARAMS (argc, &argv)
 
 #define VAR_HT_STACK_INIT_SIZE 100
 #define MAX_TOKEN_VALUE 56
