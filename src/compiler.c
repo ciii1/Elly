@@ -15,7 +15,7 @@ int LINE = 1;
 int COLUMN = 1;
 
 int compile(char *filename) {
-	if ((SOURCE = fopen(filename,"r")) != NULL) {
+	if ((SOURCE = fopen(filename, "r")) != NULL) {
 		printf("compiling '%s'\n", filename);
 		FILENAME = filename;
 	} else {
@@ -23,7 +23,6 @@ int compile(char *filename) {
 		return 1;
 	}
 	
-	printf("Code:\n");
 	char* output = generate_code();
 	printf("%s\n", output);
 	free(output);
