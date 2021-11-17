@@ -116,6 +116,7 @@ enum tags2{
 #define VAR_HT_STACK_INIT_SIZE 100
 #define MAX_TOKEN_VALUE 56
 #define INIT_DSTR_SPACE 56
+#define INIT_DARR_SPACE 56
 #define FN_PARAMS_MAX 100
 
 #endif

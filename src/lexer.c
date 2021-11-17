@@ -357,6 +357,15 @@ token_t lex_next_token() {
 	return lex_init_token(str, tag, tag2);
 }	
 
+void lex_reset() {
+	fseek(SOURCE, 0, SEEK_SET);
+
+	/* restore the compiler variables */
+	CHAR = 1;
+	COLUMN = 1;
+	LINE = 1;
+}
+
 /* generate current token but don't move the fseek */
 token_t lex_peek_token() {
 	/* store all the compiler variables */
