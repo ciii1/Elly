@@ -10,6 +10,7 @@
 #include "include/dstr.h"
 #include "include/utils.h"
 
+
 /* the following function returns true if the argument 'ch' given is one of the first operator combination * (if the operator is += then + is the first operator combination) and returns false otherwise */
 bool is_operator(char ch) {
 	if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || 
@@ -73,7 +74,6 @@ tag_t get_keyword_tag(char *str) {
 	}
 }
 
-
 /* get current character of the file without moving the fseek */
 char PEEK() {
 	char ch;
@@ -106,15 +106,9 @@ token_t lex_init_token(char *value, tag_t tag, tag_t tag2) {
 	return token;
 }	
 
-/* generate current token and move fseek*/
-token_t lex_next_token() {
-	signed char ch = PEEK();
-	char str[32];
-	int str_counter = 0;
-	tag_t tag = 0;
-	tag_t tag2 = 0;
-
-	/* skip whitespaces and comments*/
+/* skip whitespace and comments*/
+void cut_trash() {
+	char ch = PEEK();
 	while (ch == '#' || ch == '/') {
 		if (ch == '#') {
 			while (ch != '\n') {
@@ -133,6 +127,17 @@ token_t lex_next_token() {
        	while (ch == ' ' || ch == '\t' || ch == '\n') {
 		ch = NEXT();
 	}
+}
+
+/* generate current token and move fseek*/
+token_t lex_next_token() {
+	cut_trash();
+
+	signed char ch = PEEK();
+	char str[32];
+	int str_counter = 0;
+	tag_t tag = 0;
+	tag_t tag2 = 0;
 
 	if (ch == EOF) {
 		tag = EOF_T;
@@ -334,29 +339,12 @@ token_t lex_next_token() {
 	/* add an escape character after the string */	
 	str[str_counter] = '\0';
 
-	/* skip whitespaces and comments*/
-	while (ch == '#' || ch == '/') {
-		if (ch == '#') {
-			while (ch != '\n') {
-				ch = NEXT();
-			}
-		} else if (ch == '/') {
-			ch = NEXT();
-			while (ch != '/') {
-				ch = NEXT();
-			}
-		}
-       		while (ch == ' ' || ch == '\t' || ch == '\n') {
-			ch = NEXT();
-		}
-	} 
-       	while (ch == ' ' || ch == '\t' || ch == '\n') {
-		ch = NEXT();
-	}
+	cut_trash();
 
 	return lex_init_token(str, tag, tag2);
 }	
 
+/* very buggy n dangerous lol, don't use it atm, just let it floating around here */
 void lex_reset() {
 	fseek(SOURCE, 0, SEEK_SET);
 
@@ -368,6 +356,8 @@ void lex_reset() {
 
 /* generate current token but don't move the fseek */
 token_t lex_peek_token() {
+	cut_trash();
+
 	/* store all the compiler variables */
 	int curr_char = CHAR;
 	int curr_col = COLUMN;
