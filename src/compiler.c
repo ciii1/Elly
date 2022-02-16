@@ -14,6 +14,7 @@ int CHAR = 1;
 int LINE = 1;
 int COLUMN = 1;
 
+/* The entry point */
 int compile(char *filename) {
 	if ((SOURCE = fopen(filename, "r")) != NULL) {
 		printf("compiling '%s'\n", filename);
