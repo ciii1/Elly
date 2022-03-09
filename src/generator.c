@@ -1,10 +1,8 @@
 /* The file will output a pointer to the generated C code by the generate_code() function.
- * It parses using recursive descent parser, analyze and generate the source code in double pass;
- * the first parse is for global definitions (function declarations (it's body is excluded), enums, etc.) 
- * and the second is for local code.
+ * It parses using recursive descent parser, analyze and generate the source code in one pass;
  *
  * It aims to be fast and simple, it doesn't even have an AST, rather the code are generated directly everytime a token is parsed.
- * If one wants to make another backend for the generator, then please make it in another file */
+ * If one wants to make another backend for the generator, then please make it in another file under backend/<your_backend>.c */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +16,7 @@
 #include "include/lexer.h"
 #include "include/utils.h"
 #include "include/darr.h"
+#include "backend/c_backend.h"
 #include "ht/ht.h"
 
 #define OUTPUT_SIZE 16777216 /* 8^8 */
@@ -630,34 +629,28 @@ bool var_decl_gen(dstr_t* w_area) {
 		exit(1);
 	}
 
-	/* generate the code based from the parsed data */
-	if (is_const) {
-		dstr_append(w_area, "const " TOSTRING(VARIABLE_STRUCT) " ");
-	} else {
-		dstr_append(w_area, TOSTRING(VARIABLE_STRUCT) " ");
-	}
-	dstr_append(w_area, name_tkn.value);
-	
 	/* if there's no init */
 	if(lex_jump_peek_token().tag2 != ASSIGNMENT_OPR_T) {
-		dstr_append(w_area, ";\n");
-		dstr_append(w_area, TOSTRING(NULLIFY_FUNC) "(");
-		dstr_append(w_area, name_tkn.value);
-		dstr_append(w_area, ")");
+		/* actually assign the is_const to the var_val */
 		var_val->is_const = is_const;
 		lex_next_token();
+		c_var_decl(w_area, name_tkn.value, NULL, is_const);
 		return true;
 	}
 
-	dstr_append(w_area, ";\n");
-	
+	dstr_t expr;
+	dstr_init(&expr);
 	/* generate the expression */
-	if(!expr_gen(w_area, 0)){
+	if(!expr_gen(&expr, 0)){
 		return false;
 	}
 
+	c_var_decl(w_area, name_tkn.value, expr.str, is_const);
+
 	/* actually assign the is_const to the var_val */
 	var_val->is_const = is_const;
+
+	free(expr.str);
 
 	return true;
 }
@@ -910,8 +903,8 @@ char* generate_code() {
 	/* append the generated output to w_area neatly */
 	dstr_append(&w_area, w_area_glob.str);
 	/* the main function header */
-	dstr_append(&w_area, "\n" TOSTRING(MAIN_FUNC_TYPE) " " TOSTRING(MAIN_FUNC_NAME) TOSTRING(MAIN_FUNC_PARAMS) " {\n");
-	dstr_append(&w_area, TOSTRING(PROGRAM_INIT_FUNC) TOSTRING(PROGRAM_INIT_PARAMS) ";\n"); 
+	dstr_append(&w_area, "\n" TOSTRING(C_MAIN_FUNC_TYPE) " " TOSTRING(C_MAIN_FUNC_NAME) TOSTRING(C_MAIN_FUNC_PARAMS) " {\n");
+	dstr_append(&w_area, TOSTRING(PROGRAM_INIT_FUNC) TOSTRING(C_PROGRAM_INIT_PARAMS) ";\n"); 
 	dstr_append(&w_area, w_area_main.str);
 	dstr_append(&w_area, "};\n");
 
@@ -936,7 +929,7 @@ bool match_global_grammar(dstr_t* w_area_main, dstr_t* w_area_glob) {
 			dstr_append(w_area_glob, ";\n");
 		}
 	} else {
-		dstr_append(w_area_main, ";\n");
+		dstr_append(w_area_main, "\n");
 	}
 	if (lex_peek_token().tag == SEMICOLON_T) {
 		lex_next_token();
@@ -957,6 +950,6 @@ bool match_local_grammar(dstr_t* w_area) {
 	if (lex_peek_token().tag == SEMICOLON_T) {
 		lex_next_token();
 	}
-	dstr_append(w_area, ";\n");
+	dstr_append(w_area, "\n");
 	return true;
 }
