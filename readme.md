@@ -13,7 +13,7 @@ fn add(var a, var b) {
 var a = 1
 const b = 2
 
-#this will prints 1+2
+#this will print 1+2
 print('1+2=' + add(a,b))
 ```
 For more information, you can take a look at the documentation [TODO]
