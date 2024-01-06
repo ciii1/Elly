@@ -1,8 +1,7 @@
 /* The file will output a pointer to the generated C code by the generate_code() function.
  * It parses using recursive descent parser, analyze and generate the source code in one pass;
  *
- * It aims to be fast and simple, it doesn't even have an AST, rather the code are generated directly everytime a token is parsed.
- * If one wants to make another backend for the generator, then please make it in another file under backend/<your_backend>.c */
+ * It aims to be fast and simple, it doesn't even have an AST, rather the code are generated directly everytime a token is parsed. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -255,20 +254,18 @@ bool func_decl_gen(dstr_t* w_area) {
 	
 	dstr_append_char(w_area, '(');
 	
+	lex_next_token();
+
 	/* create a new variable scope, for the params and local variables */
 	scope++;
 	if((var_ht[scope] = ht_create()) == NULL) {
 	        printf("FATAL ERROR: failed to initialize ht");
 	        exit(1);
 	}
-	
-	
-	int default_param_counter = 0;
-	
+
 	/* parse the parameters */
+	int default_param_counter = 0;
 	while (lex_peek_token().tag2 != RIGHT_PAREN_T) {
-	        lex_next_token();
-	
 	        if (lex_peek_token().tag2 != DECL_T) {
 	                return false;
 	        }
@@ -295,7 +292,7 @@ bool func_decl_gen(dstr_t* w_area) {
 	        /* if it doesn't exist, insert to the var_ht */
 	        var_data_t* var_val;
 	        var_val = malloc(sizeof(var_data_t));
-	        /* set to false because we will initialise it */
+	        /* set to false because we will initialize it */
 	        var_val->is_const = false;
 	
 	        ht_set(var_ht[scope], name_tkn.value, var_val);
@@ -307,7 +304,7 @@ bool func_decl_gen(dstr_t* w_area) {
 	        /* if there's no init */
 	        if(lex_jump_peek_token().tag2 != ASSIGNMENT_OPR_T) {
 	                if (default_param_counter > 0) {
-	                        exit_error("parameter with no default value after a list of parameter with default value");
+	                        exit_error("parameter with no default value after a parameter with default value");
 	                }
 	                var_val->is_const = is_const;
 	                lex_next_token();
@@ -335,11 +332,10 @@ bool func_decl_gen(dstr_t* w_area) {
 	        }
 	        func_data->param_max++;
 	
+	        //printf("lex_peek_token(): %s\n", lex_peek_token().value);
 	        if (lex_peek_token().tag2 == COMMA_T) {
 	                dstr_append_char(w_area, ',');
-	                if (lex_jump_peek_token().tag2 == RIGHT_PAREN_T) {
-	                        return false;
-	                }
+	                lex_next_token();
 	        }
 	}
 	
